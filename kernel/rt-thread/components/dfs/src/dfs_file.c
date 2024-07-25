@@ -25,6 +25,10 @@ struct dfs_fnode_mgr
 };
 
 static struct dfs_fnode_mgr dfs_fm;
+#define mtp_ctx void
+#include "inotify.h"
+unsigned char dfs_fs_change;
+extern const struct dfs_filesystem_ops dfs_elm;
 
 void dfs_fm_lock(void)
 {
@@ -152,6 +156,7 @@ int dfs_file_open(struct dfs_fd *fd, const char *path, int flags)
     LOG_D("open file:%s", fullpath);
 
     dfs_fm_lock();
+    dfs_fs_change = 0;
     /* fnode find */
     fnode = dfs_fnode_find(fullpath, &hash_head);
     if (fnode)
@@ -257,6 +262,8 @@ int dfs_file_open(struct dfs_fd *fd, const char *path, int flags)
         fd->fnode->type = FT_DIRECTORY;
         fd->flags |= DFS_F_DIRECTORY;
     }
+    if (dfs_fs_change)
+        inotify_handler_filechange(NTY_FILE_ADD, fullpath);
     dfs_fm_unlock();
 
     LOG_D("open successful");
@@ -283,6 +290,7 @@ int dfs_file_close(struct dfs_fd *fd)
     if (fd->ref_count == 1)
     {
         dfs_fm_lock();
+        dfs_fs_change = 0;
         fnode = fd->fnode;
 
         if (fnode->ref_count <= 0)
@@ -303,6 +311,8 @@ int dfs_file_close(struct dfs_fd *fd)
             return result;
         }
 
+        if (dfs_fs_change)
+            inotify_handler_filechange(NTY_FILE_CHG, fd->fnode->fullpath);
         if (fnode->ref_count == 1)
         {
             /* remove from hash */
@@ -477,6 +487,8 @@ int dfs_file_unlink(const char *path)
     else result = -ENOSYS;
 
 __exit:
+    if (result == 0 && fs->ops == &dfs_elm)
+        inotify_handler_filechange(NTY_FILE_RM, fullpath);
     rt_free(fullpath);
     return result;
 }
@@ -519,6 +531,16 @@ int dfs_file_flush(struct dfs_fd *fd)
 
     if (fd->fnode->fops->flush == NULL)
         return -ENOSYS;
+
+    if (fd->fnode->fs->ops == &dfs_elm) {
+        dfs_fm_lock();
+        dfs_fs_change = 0;
+        int ret = fd->fnode->fops->flush(fd);
+        if (dfs_fs_change)
+            inotify_handler_filechange(NTY_FILE_CHG, fd->fnode->fullpath);
+        dfs_fm_unlock();
+        return ret;
+    }
 
     return fd->fnode->fops->flush(fd);
 }
@@ -681,6 +703,10 @@ int dfs_file_rename(const char *oldpath, const char *newpath)
     }
 
 __exit:
+    if (result == 0 && newfs->ops == &dfs_elm) {
+        inotify_handler_filechange(NTY_FILE_RM, oldfullpath);
+        inotify_handler_filechange(NTY_FILE_ADD, newfullpath);
+    }
     if (oldfullpath)
     {
         rt_free(oldfullpath);

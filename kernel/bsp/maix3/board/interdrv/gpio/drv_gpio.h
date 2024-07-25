@@ -25,7 +25,7 @@
 
 #ifndef DRV_GPIO_H__
 #define DRV_GPIO_H__
-#define GPIO_MAX_NUM                (64+8)
+#define GPIO_MAX_NUM                64
 #define IRQN_GPIO0_INTERRUPT      32
 
 /* k230 gpio register table */
@@ -43,10 +43,6 @@
 #define DATA_INPUT          0x50
 #define VER_ID_CODE         0x64
 #define INT_BOTHEDGE        0x68
-
-#define DATA_INPUT_STRIDE	0x04 /* register stride 32 bits */
-#define DATA_OUTPUT_STRIDE	0x0c /* register stride 3*32 bits */
-#define DIRECTION_STRIDE	0x0c /* register stride 3*32 bits */
 
 #define KD_GPIO_HIGH                1
 #define KD_GPIO_LOW                 0
@@ -69,6 +65,18 @@
 #define	KD_GPIO_PE_LOW              _IOW('G', 11, int)
 
 #define KD_GPIO_READ_VALUE       	_IOW('G', 12, int)
+
+#define	KD_GPIO_ENABLE_IRQ           _IOW('G', 13, int)
+#define	KD_GPIO_DISABLE_IRQ          _IOW('G', 14, int)
+#define	KD_GPIO_ATTACH_IRQ           _IOW('G', 15, int)
+#define	KD_GPIO_DETACH_IRQ           _IOW('G', 16, int)
+
+
+// #define KD_GPIO_PE_RISING           _IOW('G', 17, int)
+// #define KD_GPIO_PE_FALLING          _IOW('G', 18, int)
+// #define KD_GPIO_PE_BOTH             _IOW('G', 19, int)
+// #define KD_GPIO_PE_HIGH             _IOW('G', 20, int)
+// #define KD_GPIO_PE_LOW              _IOW('G', 21, int)
 
 
 typedef enum _gpio_pin_edge

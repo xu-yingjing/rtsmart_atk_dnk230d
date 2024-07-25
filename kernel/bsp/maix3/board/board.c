@@ -11,6 +11,7 @@
 #include <rthw.h>
 #include <rtthread.h>
 #include <rtdevice.h>
+#include <stdint.h>
 
 #include "board.h"
 #include "tick.h"
@@ -40,7 +41,6 @@
     //内核页表
     volatile rt_size_t MMUTable[__SIZE(VPN2_BIT)] __attribute__((aligned(4 * 1024)));
     rt_mmu_info mmu_info;
-
 #endif
 
 //初始化BSS节区
@@ -55,32 +55,34 @@ void init_bss(void)
     }
 }
 
-#define MEM_RESVERD_SIZE    0x1000      /*隔离区*/
-#define MEM_IPCM_BASE 0x100000
-#define MEM_IPCM_SIZE 0xff000
+// #define MEM_RESVERD_SIZE    0x1000      /*隔离区*/
+// #define MEM_IPCM_BASE 0x100000
+// #define MEM_IPCM_SIZE 0xff000
 
-
-void init_ipcm_mem(void)
-{
-    rt_uint32_t *dst;
-    int i = 0;
-    dst = rt_ioremap((void *)(MEM_IPCM_BASE + MEM_IPCM_SIZE - MEM_RESVERD_SIZE - MEM_RESVERD_SIZE), MEM_RESVERD_SIZE);
-    if(dst == RT_NULL) {
-        rt_kprintf("ipcm ioremap error\n");
-    }
-    rt_memset((void *)dst, 0, MEM_RESVERD_SIZE);
-    for(i = 0; i < (0x1000 / 4); i++) {
-        if(dst[i] != 0) {
-            rt_kprintf("memest error addr:%p value:%d\n", &dst[i], dst[i]);
-        }
-    }
-    rt_iounmap((void *)dst);
-}
+// void init_ipcm_mem(void)
+// {
+//     rt_uint32_t *dst;
+//     int i = 0;
+//     dst = rt_ioremap((void *)(MEM_IPCM_BASE + MEM_IPCM_SIZE - MEM_RESVERD_SIZE - MEM_RESVERD_SIZE), MEM_RESVERD_SIZE);
+//     if(dst == RT_NULL) {
+//         rt_kprintf("ipcm ioremap error\n");
+//     }
+//     rt_memset((void *)dst, 0, MEM_RESVERD_SIZE);
+//     for(i = 0; i < (0x1000 / 4); i++) {
+//         if(dst[i] != 0) {
+//             rt_kprintf("memest error addr:%p value:%d\n", &dst[i], dst[i]);
+//         }
+//     }
+//     rt_iounmap((void *)dst);
+// }
 
 static void __rt_assert_handler(const char *ex_string, const char *func, rt_size_t line)
 {
     rt_kprintf("(%s) assertion failed at function:%s, line number:%d \n", ex_string, func, line);
-    asm volatile("ebreak":::"memory");
+    // asm volatile("ebreak":::"memory");
+    while (1){
+        asm volatile("wfi");
+    }
 }
 
 //BSP的C入口
@@ -117,25 +119,36 @@ void rt_hw_board_init(void)
 
     rt_hw_mmu_switch((void *)MMUTable);
 #endif
+
 #ifdef RT_USING_HEAP
     // rt_kprintf("heap: [0x%08x - 0x%08x]\n", (rt_ubase_t) RT_HW_HEAP_BEGIN, (rt_ubase_t) RT_HW_HEAP_END);
     /* initialize memory system */
     rt_system_heap_init(RT_HW_HEAP_BEGIN, RT_HW_HEAP_END);
 #endif
-#if  MEM_IPCM_SIZE >  MEM_RESVERD_SIZE
-    init_ipcm_mem();
-    /* initalize interrupt */
-#endif 
+
+// #if  MEM_IPCM_SIZE >  MEM_RESVERD_SIZE
+//     init_ipcm_mem();
+//     /* initalize interrupt */
+// #endif 
+
     rt_hw_interrupt_init();
 
     /* initialize hardware interrupt */
-    rt_hw_uart_init();
+
     rt_hw_tick_init();
 
 #ifdef RT_USING_CONSOLE
-    /* set console device */
+    rt_hw_uart_init();
     rt_console_set_device(RT_CONSOLE_DEVICE_NAME);
 #endif /* RT_USING_CONSOLE */
+
+#ifdef RT_USING_HEAP
+    rt_kprintf("heap: [0x%08x - 0x%08x], size %d KB\n", (rt_ubase_t) RT_HW_HEAP_BEGIN, (rt_ubase_t) RT_HW_HEAP_END, (rt_ubase_t)RT_HEAP_SIZE / 1024);
+#endif
+
+#ifdef RT_USING_USERSPACE
+    rt_kprintf("page: [0x%08x - 0x%08x], size %d KB\n", (rt_ubase_t) RT_HW_PAGE_START, (rt_ubase_t) RT_HW_PAGE_END, (rt_ubase_t)((rt_ubase_t) RT_HW_PAGE_END - (rt_ubase_t) RT_HW_PAGE_START) / 1024);
+#endif
 
 #ifdef RT_USING_COMPONENTS_INIT
     rt_components_board_init();

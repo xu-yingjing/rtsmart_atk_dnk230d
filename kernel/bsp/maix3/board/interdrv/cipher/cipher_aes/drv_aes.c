@@ -322,9 +322,8 @@ static void dma_write_rwcfg(const rt_uint8_t *out, const rt_uint8_t *in, rt_uint
         writel((uintptr_t)out, sec_base_addr + DMA_DSC_CFG_1_OFFSET);
     else
     {
-        rt_hw_cpu_dcache_clean_flush(out_kvirt, len);
+        rt_hw_cpu_dcache_clean(out_kvirt, len);
         out_pa = virt_to_phys((void*)out_kvirt);
-        rt_hw_cpu_dcache_clean_flush((void *)out_pa, len);
         writel(out_pa, sec_base_addr + DMA_DSC_CFG_1_OFFSET);
     }
 
@@ -334,9 +333,8 @@ static void dma_write_rwcfg(const rt_uint8_t *out, const rt_uint8_t *in, rt_uint
     {
         rt_memcpy(in_kvirt, (void *)in, len);
 
-        rt_hw_cpu_dcache_clean_flush(in_kvirt, len);
+        rt_hw_cpu_dcache_clean(in_kvirt, len);
         in_pa = virt_to_phys(in_kvirt);
-        rt_hw_cpu_dcache_clean_flush((void *)in_pa, len);
         writel(in_pa, sec_base_addr + DMA_DSC_CFG_0_OFFSET);
     }
 }
@@ -678,7 +676,7 @@ static pufs_status_t _ctx_update(struct aes_context* aes_ctx,
                                 rt_bool_t last)
 {
     rt_uint32_t val32;
-    pufs_status_t check;
+    pufs_status_t check = SUCCESS;
     // Register manipulation
     if (dma_check_busy_status(RT_NULL))
         return E_BUSY;
@@ -690,47 +688,49 @@ static pufs_status_t _ctx_update(struct aes_context* aes_ctx,
     dma_write_data_block_config(aes_ctx->start ? RT_FALSE : RT_TRUE, last, RT_TRUE, RT_TRUE, 0);
 
     void *in_kvirt, *out_kvirt;
-    in_kvirt = rt_malloc(inlen);
-    out_kvirt = rt_malloc(inlen);
-    if(!in_kvirt || !out_kvirt)
-    {
+    in_kvirt = rt_malloc_align(inlen, 64);
+    out_kvirt = rt_malloc_align(inlen, 64);
+    if (!in_kvirt || !out_kvirt) {
         rt_kprintf("%s malloc fail!\n", __func__);
-        check = -E_ERROR;
-        return check;
+        check = E_ERROR;
+        goto error;
     }
     dma_write_rwcfg(out, in, inlen, in_kvirt, out_kvirt);
-  
+
     if ((check = gcm_prepare(aes_ctx, out, inlen)) != SUCCESS)
-        return check;
+        goto error;
 
     dma_write_start();
     while (dma_check_busy_status(&val32));
  
-    if (val32 != 0)
-    {
+    if (val32 != 0) {
         rt_kprintf("[ERROR] DMA status 0: 0x%08x\n", val32);
-        return E_ERROR;
+        check = E_ERROR;
+        goto error;
     }
 
     val32 = readl(sec_base_addr + GCM_STAT_OFFSET);
-    if ((val32 & GCM_STATUS_RESP_MASK) != 0)
-    {
+    if ((val32 & GCM_STATUS_RESP_MASK) != 0) {
         rt_kprintf("[ERROR] GCM status 0: 0x%08x\n", val32);
-        return E_ERROR;
+        check = E_ERROR;
+        goto error;
     }
 
     if ((check = gcm_postproc(aes_ctx)) != SUCCESS)
-        return check;
+        goto error;
 
-    if (out != RT_NULL) // output
-    {
+    if (out != RT_NULL) {
         *outlen = inlen;
+        rt_hw_cpu_dcache_invalidate(out_kvirt, inlen);
         rt_memcpy(out, out_kvirt, inlen);
     }
-    rt_free(in_kvirt);
-    rt_free(out_kvirt);
+error:
+    if (in_kvirt)
+        rt_free_align(in_kvirt);
+    if (out_kvirt)
+        rt_free_align(out_kvirt);
 
-    return SUCCESS;
+    return check;
 }
 
 static pufs_status_t gcm_tag(struct aes_context *aes_ctx, rt_uint8_t *tag, rt_uint32_t taglen, rt_bool_t from_reg)
@@ -1272,7 +1272,7 @@ static rt_err_t aes_control(rt_device_t dev, int cmd, void *args)
                 ret = -RT_ERROR;
                 goto release_lock;
             }
-            
+
             // clear key from hardware
             if((check = pufs_clear_key(SSKEY, g_keyslot, _keybits) != SUCCESS))
             {
@@ -1283,15 +1283,13 @@ static rt_err_t aes_control(rt_device_t dev, int cmd, void *args)
 
             // debug
             debug_func("out", _out, _outlen);
-            
+
             // output result
             config_args->outlen = _aadlen + _outlen + _taglen;
             config_args->taglen = _taglen;
             lwp_put_to_user(config_args->out, _aad, _aadlen);
             lwp_put_to_user((config_args->out + _aadlen), _out, _outlen);
             lwp_put_to_user((config_args->out + _aadlen + _outlen), _tag, _taglen);
-
-            rt_free(total);
             break;
         }
         case RT_AES_GCM_DEC:
@@ -1344,25 +1342,20 @@ static rt_err_t aes_control(rt_device_t dev, int cmd, void *args)
             config_args->taglen = 0;
             lwp_put_to_user(config_args->out, _aad, _aadlen);
             lwp_put_to_user((config_args->out + _aadlen), _out, _outlen);
-
-            rt_free(total);
             break;
         }
 
         default:
-            return -RT_EINVAL;
+            ret = -RT_EINVAL;
+            goto release_lock;
     }
 
-    if(ret != RT_EOK)
-        goto release_lock;
-
-ret_aes:
-
+    rt_free(total);
     return ret;
-
 release_lock:
+    rt_free(total);
     kd_hardlock_unlock(aes_hardlock);
-    goto ret_aes;
+    return ret;
 }
 
 static rt_err_t aes_open(rt_device_t dev, rt_uint16_t oflag)

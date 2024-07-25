@@ -71,6 +71,12 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
 
     if GetDepend(['PKG_CHERRYUSB_DEVICE_CDC_ACM']):
         src += Glob('class/cdc/usbd_cdc.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_MTP']):
+        path += [cwd + '/class/mtp']
+        path += [cwd + '/class/mtp/uMTP-Responder/inc']
+        src += Glob('class/mtp/usbd_mtp.c')
+        src += Glob('class/mtp/uMTP-Responder/src/*.c')
+        src += Glob('class/mtp/uMTP-Responder/src/mtp_operations/*.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_HID']):
         src += Glob('class/hid/usbd_hid.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_MSC']):
@@ -120,6 +126,8 @@ if GetDepend(['PKG_CHERRYUSB_DEVICE']):
         src += Glob('demo/winusb2.0_cdc_template.c')
     if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_WINUSBV2_HID']):
         src += Glob('demo/winusb2.0_hid_template.c')
+    if GetDepend(['PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MTP']):
+        src += Glob('cdc_acm_mtp.c')
 
 # USB HOST
 if GetDepend(['PKG_CHERRYUSB_HOST']):

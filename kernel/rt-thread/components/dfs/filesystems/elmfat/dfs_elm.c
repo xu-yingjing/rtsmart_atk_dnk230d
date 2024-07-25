@@ -901,7 +901,7 @@ static const struct dfs_file_ops dfs_elm_fops =
     RT_NULL, /* poll interface */
 };
 
-static const struct dfs_filesystem_ops dfs_elm =
+const struct dfs_filesystem_ops dfs_elm =
 {
     "elm",
     DFS_FS_FLAG_DEFAULT,

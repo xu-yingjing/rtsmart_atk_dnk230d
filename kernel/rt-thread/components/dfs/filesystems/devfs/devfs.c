@@ -245,6 +245,13 @@ int dfs_device_fs_open(struct dfs_fd *file)
     return -EIO;
 }
 
+int dfs_device_fs_lseek(struct dfs_fd *file, off_t offset)
+{
+    RT_ASSERT(file != RT_NULL);
+    file->pos = offset;
+    return offset;
+}
+
 int dfs_device_fs_unlink(struct dfs_filesystem *fs, const char *path)
 {
 #ifdef RT_USING_DEV_BUS
@@ -368,7 +375,7 @@ static const struct dfs_file_ops _device_fops =
     dfs_device_fs_read,
     dfs_device_fs_write,
     RT_NULL,                    /* flush */
-    RT_NULL,                    /* lseek */
+    dfs_device_fs_lseek,
     dfs_device_fs_getdents,
     dfs_device_fs_poll,
 };

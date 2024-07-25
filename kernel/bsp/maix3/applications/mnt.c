@@ -4,25 +4,46 @@
 #include <dfs_fs.h>
 #include <dfs_romfs.h>
 
-int mnt_init(void)
-{
-    rt_err_t ret;
-
-    if (dfs_mount(RT_NULL, "/", "rom", 0, &romfs_root) != 0)
-    {
-        rt_kprintf("Dir / mount failed!\n");
-        return -1;
-    }
-
-    mkdir("/dev/shm", 0x777);
-    if (dfs_mount(RT_NULL, "/dev/shm", "tmp", 0, 0) != 0) {
-        rt_kprintf("Dir /dev/shm mount failed!\n");
-    }
-#ifndef RT_FASTBOOT
-    rt_kprintf("/dev/shm file system initialization done!\n");
+const struct romfs_dirent _root_dirent[] = {
+    {ROMFS_DIRENT_DIR, "bin", RT_NULL, 0},
+#ifdef RT_USING_DFS_DEVFS
+    {ROMFS_DIRENT_DIR, "dev", RT_NULL, 0},
 #endif
-    return 0;
+#ifdef RT_USING_SDIO
+    {ROMFS_DIRENT_DIR, "sdcard", RT_NULL, 0},
+#endif
+#ifdef RT_USING_DFS_NFS
+    {ROMFS_DIRENT_DIR, "nfs", RT_NULL, 0},
+#endif
+#ifdef RT_USING_PROC
+    {ROMFS_DIRENT_DIR, "proc", RT_NULL, 0},
+#endif
+};
+
+const struct romfs_dirent romfs_root = {
+    ROMFS_DIRENT_DIR, "/", (rt_uint8_t *)_root_dirent,
+    sizeof(_root_dirent) / sizeof(_root_dirent[0])};
+
+int mnt_init(void) {
+  rt_err_t ret;
+
+  if (dfs_mount(RT_NULL, "/", "rom", 0, &romfs_root) != 0) {
+    rt_kprintf("Dir / mount failed!\n");
+    return -1;
+  }
+
+  mkdir("/dev/shm", 0x777);
+
+  if (dfs_mount(RT_NULL, "/dev/shm", "tmp", 0, 0) != 0) {
+    rt_kprintf("Dir /dev/shm mount failed!\n");
+  }
+
+#ifndef RT_FASTBOOT
+  rt_kprintf("/dev/shm file system initialization done!\n");
+#endif
+
+  return 0;
 }
 INIT_ENV_EXPORT(mnt_init);
-#endif
 
+#endif

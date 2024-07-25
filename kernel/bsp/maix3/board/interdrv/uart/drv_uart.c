@@ -15,10 +15,10 @@
 #include "riscv_io.h"
 #include "board.h"
 
-#define UART_DEFAULT_BAUDRATE       115200
+#define UART_DEFAULT_BAUDRATE 115200
 #define UART_CLK                    50000000
-#define UART_ADDR 0x91403000UL
-#define UART_IRQ 0x13
+#define UART_ADDR 0x91400000UL
+#define UART_IRQ 0x10
 
 
 #define UART_RBR (0x00)       /* receive buffer register */
@@ -112,8 +112,8 @@ const struct rt_uart_ops _uart_ops =
     RT_NULL
 };
 
-struct rt_serial_device  serial1;
-struct device_uart       uart1;
+struct rt_serial_device  serial0;
+struct device_uart       uart0;
 
 #define write32(addr, val) writel(val, (void*)(addr))
 #define read32(addr) readl((void*)(addr))
@@ -345,8 +345,8 @@ int rt_hw_uart_init(void)
     struct serial_configure config = RT_SERIAL_CONFIG_DEFAULT;
 
     {
-        serial  = &serial1;
-        uart    = &uart1;
+        serial  = &serial0;
+        uart    = &uart0;
 
         serial->ops              = &_uart_ops;
         serial->config           = config;
@@ -357,7 +357,7 @@ int rt_hw_uart_init(void)
 
         _uart_init((void*)(uart->hw_base));
 
-        rt_hw_interrupt_install(uart->irqno, rt_hw_uart_isr, serial, "uart1");
+        rt_hw_interrupt_install(uart->irqno, rt_hw_uart_isr, serial, "uart0");
         rt_hw_interrupt_umask(uart->irqno);
 
         rt_hw_serial_register(serial,

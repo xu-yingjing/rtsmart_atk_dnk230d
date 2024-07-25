@@ -582,7 +582,7 @@ static WCHAR LfnBuf[_MAX_LFN+1];	/* LFN enabled with static working buffer */
 static const BYTE ExCvt[] = _EXCVT;	/* Upper conversion table for SBCS extended characters */
 #endif
 
-
+extern unsigned char dfs_fs_change;
 
 
 
@@ -3281,12 +3281,14 @@ FRESULT f_open (
 		/* Create or Open a file */
 		if (mode & (FA_CREATE_ALWAYS | FA_OPEN_ALWAYS | FA_CREATE_NEW)) {
 			if (res != FR_OK) {					/* No file, create new */
-				if (res == FR_NO_FILE)			/* There is no file to open, create a new entry */
+				if (res == FR_NO_FILE) {		/* There is no file to open, create a new entry */
 #if _FS_LOCK != 0
 					res = enq_lock() ? dir_register(&dj) : FR_TOO_MANY_OPEN_FILES;
 #else
 					res = dir_register(&dj);
 #endif
+					dfs_fs_change = 1;
+				}
 				mode |= FA_CREATE_ALWAYS;		/* File is created */
 			}
 			else {								/* Any object is already existing */
@@ -3728,6 +3730,7 @@ FRESULT f_sync (
 					fp->flag &= (BYTE)~FA_MODIFIED;
 				}
 			}
+			dfs_fs_change = 1;
 		}
 	}
 
@@ -4636,6 +4639,7 @@ FRESULT f_mkdir (
 					fs->wflag = 1;
 				}
 				if (res == FR_OK) res = sync_fs(fs);
+				if (res == FR_OK) dfs_fs_change = 1;
 			} else {
 				remove_chain(&dj.obj, dcl, 0);		/* Could not register, remove cluster chain */
 			}

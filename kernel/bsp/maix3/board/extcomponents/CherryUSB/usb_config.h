@@ -40,6 +40,14 @@
 /* ================= USB Device Stack Configuration ================ */
 
 #define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
+#define CDC_DEV_BUSID 0
+
+#define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (2048 / 4)
+#define CONFIG_USB_DWC2_TX0_FIFO_SIZE (256 / 4)
+#define CONFIG_USB_DWC2_TX1_FIFO_SIZE (2048 / 4)
+#define CONFIG_USB_DWC2_TX2_FIFO_SIZE (256 / 4)
+#define CONFIG_USB_DWC2_TX3_FIFO_SIZE (2048 / 4)
+#define CONFIG_USB_DWC2_TX4_FIFO_SIZE (256 / 4)
 
 /* Ep0 max transfer buffer, specially for receiving data from ep0 out */
 #define CONFIG_USBDEV_REQUEST_BUFFER_LEN 256
@@ -55,6 +63,13 @@
 
 #ifndef CONFIG_USBDEV_MSC_MAX_LUN
 #define CONFIG_USBDEV_MSC_MAX_LUN 1
+#endif
+
+#ifndef CONFIG_USBDEV_MTP_PRIO
+#define CONFIG_USBDEV_MTP_PRIO 10
+#endif
+#ifndef CONFIG_USBDEV_MTP_STACKSIZE
+#define CONFIG_USBDEV_MTP_STACKSIZE 20480
 #endif
 
 #ifndef CONFIG_USBDEV_MSC_MAX_BUFSIZE

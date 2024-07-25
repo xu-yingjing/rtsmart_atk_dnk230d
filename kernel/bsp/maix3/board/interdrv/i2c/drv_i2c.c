@@ -156,7 +156,7 @@ static unsigned int __dw_i2c_set_bus_speed(struct i2c_regs *i2c_base,
     switch (i2c_spd)
     {
     case IC_SPEED_MODE_MAX:
-        cntl |= IC_CON_SPD_HS;
+        cntl |= IC_CON_SPD_SS;
         if (scl_sda_cfg)
         {
             hcnt = scl_sda_cfg->fs_hcnt;
@@ -360,9 +360,6 @@ static int __dw_i2c_read(struct i2c_regs *i2c_base, rt_uint8_t dev, uint addr,
             {
                 writel(IC_CMD | need_restart, &i2c_base->ic_cmd_data);
             }
-
-            while( (readl(&i2c_base->ic_status) & IC_STATUS_TFE) != IC_STATUS_TFE);
-
             active = 1;
             need_restart = 0;
         }
@@ -430,15 +427,6 @@ static int __dw_i2c_write(struct i2c_regs *i2c_base, rt_uint8_t dev, uint addr,
             return 1;
         }
     }
-
-    while( (readl(&i2c_base->ic_status) & IC_STATUS_TFE) != IC_STATUS_TFE);
-
-    // if(readl(&i2c_base->ic_tx_abrt_source) != 0){
-    //     if(readl(&i2c_base->ic_raw_intr_stat)&IC_TX_ABRT){
-    //         LOG_E("i2c tx abort\n");
-    //         return 1;
-    //     }
-    // }
 
     return 0;
 }
