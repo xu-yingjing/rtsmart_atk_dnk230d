@@ -47,7 +47,7 @@ int main(void) {
   rt_thread_delay(10);
 #endif
 
-  msh_exec("/sdcard/canmv/micropython", 32);
+  msh_exec("/sdcard/micropython", 32);
 
   return 0;
 }
