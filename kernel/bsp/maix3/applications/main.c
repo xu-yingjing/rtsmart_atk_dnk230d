@@ -25,13 +25,8 @@ int main(void) {
 #ifdef RT_USING_SDIO
   while (mmcsd_wait_cd_changed(100) != MMCSD_HOST_PLUGED) {
   }
-  if (0x00 != dfs_mount("sd0", "/bin", "elm", 0, 0)) {
-    rt_kprintf("Dir /bin mount failed!\n");
-  }
-  if (0x00 != dfs_mount("sd1", "/sdcard", "elm", 0, 0)) {
-    rt_kprintf("Dir /sdcard mount failed!\n");
-  }
-#endif
+#endif //RT_USING_SDIO
+
 #ifdef PKG_CHERRYUSB_HOST
   void *usb_base;
 #ifdef CHERRYUSB_HOST_USING_USB1

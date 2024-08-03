@@ -20,13 +20,13 @@ OUTPUT_ARCH( "riscv" )
 
 MEMORY
 {
-   SRAM : ORIGIN = 0x220000, LENGTH = 128895K
+   SRAM : ORIGIN = 0x20000, LENGTH = 262015K
 }
 
 ENTRY(_start)
 SECTIONS
 {
-    . = 0x220000;    /*rt-smart link start address*/
+    . = 0x20000;    /*rt-smart link start address*/
 
     /* __STACKSIZE__ = 4096; */
     __text_start = .;

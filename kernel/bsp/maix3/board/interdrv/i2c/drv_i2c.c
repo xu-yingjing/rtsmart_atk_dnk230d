@@ -389,7 +389,7 @@ static int __dw_i2c_read(struct i2c_regs *i2c_base, rt_uint8_t dev, uint addr,
                 cut = cut + 1;
                 i2c_delay_us(100);
                 if(cut > 100)
-                    return -1;
+                    break;
             }
 
             active = 1;
@@ -467,6 +467,14 @@ static int __dw_i2c_write(struct i2c_regs *i2c_base, rt_uint8_t dev, uint addr,
         if(cut > 100)
             return -1;
     }
+
+
+    // if(readl(&i2c_base->ic_tx_abrt_source) != 0){
+    //     if(readl(&i2c_base->ic_raw_intr_stat)&IC_TX_ABRT){
+    //         LOG_E("i2c tx abort\n");
+    //         return 1;
+    //     }
+    // }
 
     return 0;
 }
@@ -632,37 +640,37 @@ INIT_BOARD_EXPORT(rt_hw_i2c_init);
 void i2c_reg_show(int argc, char *argv[])
 {
     if(argc < 2) {
-        //rt_kprintf("please input i2c num.\n");
+        rt_kprintf("please input i2c num.\n");
         return;
     }
     struct i2c_regs *i2c_base = i2c_buses[atoi(argv[1])].i2c.regs;
 
-    //rt_kprintf("base: \t\t0x%08x \r\n", i2c_base);
-    //rt_kprintf("CON: \t\t0x%08x \r\n", i2c_dw_readl(i2c_base, DW_IC_CON));
-    //rt_kprintf("TAR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_TAR));
-    //rt_kprintf("SAR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_SAR));
-    //rt_kprintf("DATA_CMD: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DATA_CMD));
-    //rt_kprintf("DW_IC_SS_SCL_HCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_SS_SCL_HCNT));
-    //rt_kprintf("DW_IC_SS_SCL_LCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_SS_SCL_LCNT));
-    //rt_kprintf("DW_IC_FS_SCL_HCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_FS_SCL_HCNT));
-    //rt_kprintf("DW_IC_FS_SCL_LCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_FS_SCL_LCNT));
-    //rt_kprintf("DW_IC_HS_SCL_HCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_HS_SCL_HCNT));
-    //rt_kprintf("DW_IC_HS_SCL_LCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_HS_SCL_LCNT));
-    //rt_kprintf("INTR_STAT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_INTR_STAT));
-    //rt_kprintf("INTR_MASK: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_INTR_MASK));
-    //rt_kprintf("DW_IC_ENABLE: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_ENABLE));
-    //rt_kprintf("RX_TL: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_RX_TL));
-    //rt_kprintf("TX_TL: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_TX_TL));
-    //rt_kprintf("STATUS: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_STATUS));
-    //rt_kprintf("TXFLR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_TXFLR));
-    //rt_kprintf("RXFLR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_RXFLR));
-    //rt_kprintf("DMA_CR: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DMA_CR));
-    //rt_kprintf("DMA_TDLR: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DMA_TDLR));
-    //rt_kprintf("DMA_RDLR: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DMA_RDLR));
-    //rt_kprintf("DEVICE_ID: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DEVICE_ID));
-    //rt_kprintf("PARAM: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_COMP_PARAM_1));
-    //rt_kprintf("VERSION: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_COMP_VERSION));
-    //rt_kprintf("TYPE: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_COMP_TYPE));
+    rt_kprintf("base: \t\t0x%08x \r\n", i2c_base);
+    rt_kprintf("CON: \t\t0x%08x \r\n", i2c_dw_readl(i2c_base, DW_IC_CON));
+    rt_kprintf("TAR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_TAR));
+    rt_kprintf("SAR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_SAR));
+    rt_kprintf("DATA_CMD: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DATA_CMD));
+    rt_kprintf("DW_IC_SS_SCL_HCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_SS_SCL_HCNT));
+    rt_kprintf("DW_IC_SS_SCL_LCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_SS_SCL_LCNT));
+    rt_kprintf("DW_IC_FS_SCL_HCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_FS_SCL_HCNT));
+    rt_kprintf("DW_IC_FS_SCL_LCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_FS_SCL_LCNT));
+    rt_kprintf("DW_IC_HS_SCL_HCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_HS_SCL_HCNT));
+    rt_kprintf("DW_IC_HS_SCL_LCNT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_HS_SCL_LCNT));
+    rt_kprintf("INTR_STAT: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_INTR_STAT));
+    rt_kprintf("INTR_MASK: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_INTR_MASK));
+    rt_kprintf("DW_IC_ENABLE: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_ENABLE));
+    rt_kprintf("RX_TL: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_RX_TL));
+    rt_kprintf("TX_TL: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_TX_TL));
+    rt_kprintf("STATUS: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_STATUS));
+    rt_kprintf("TXFLR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_TXFLR));
+    rt_kprintf("RXFLR: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_RXFLR));
+    rt_kprintf("DMA_CR: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DMA_CR));
+    rt_kprintf("DMA_TDLR: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DMA_TDLR));
+    rt_kprintf("DMA_RDLR: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DMA_RDLR));
+    rt_kprintf("DEVICE_ID: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_DEVICE_ID));
+    rt_kprintf("PARAM: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_COMP_PARAM_1));
+    rt_kprintf("VERSION: \t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_COMP_VERSION));
+    rt_kprintf("TYPE: \t\t0x%08x\n", i2c_dw_readl(i2c_base, DW_IC_COMP_TYPE));
 }
 MSH_CMD_EXPORT(i2c_reg_show, run i2c_reg_show);
 #endif

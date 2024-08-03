@@ -749,7 +749,7 @@ struct rt_thread
 
     lwp_sigset_t signal;
     lwp_sigset_t signal_mask;
-    int signal_mask_bak;
+    lwp_sigset_t signal_mask_bak[_LWP_NSIG];
     rt_uint32_t signal_in_process;
 #ifndef ARCH_MM_MMU
     lwp_sighandler_t signal_handler[32];

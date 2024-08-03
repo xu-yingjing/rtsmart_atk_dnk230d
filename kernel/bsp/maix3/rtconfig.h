@@ -1,6 +1,8 @@
 #ifndef RT_CONFIG_H__
 #define RT_CONFIG_H__
 
+#include "k_autoconf_comm.h"
+
 /* Automatically generated file; DO NOT EDIT. */
 /* RT-Thread Project Configuration */
 
@@ -157,15 +159,16 @@
 #define RT_USING_HW_TIMER0
 #define RT_USING_HW_TIMER1
 #define RT_USING_HW_TIMER2
-#define RT_SDIO_STACK_SIZE 512
-#define RT_SDIO_THREAD_PRIORITY 15
-#define RT_MMCSD_STACK_SIZE 4096
-#define RT_MMCSD_THREAD_PREORITY 22
+#define RT_SDIO_STACK_SIZE 10240
+#define RT_SDIO_THREAD_PRIORITY 4
+#define RT_MMCSD_STACK_SIZE 32768
+#define RT_MMCSD_THREAD_PRIORITY 22
 #define RT_MMCSD_MAX_PARTITION 16
 #define RT_USING_DEV_BUS
 #define RT_USING_REGULATOR
 /* canaan uart driver for uart1 uart2 uart4 */
 // #define RT_USING_CANAAN_UART
+// #define RT_USING_PDMA
 // #define RT_USING_UART1
 // #define RT_USING_UART2
 // #define RT_USING_UART4
@@ -176,19 +179,20 @@
 /* Using USB */
 #define PKG_USING_CHERRYUSB
 
-#define PKG_CHERRYUSB_HOST
-#define PKG_CHERRYUSB_HOST_DWC2_KENDRYTE
-#define PKG_CHERRYUSB_HOST_RTL8152
-#define PKG_CHERRYUSB_HOST_TEMPLATE
-#define CHERRYUSB_HOST_USING_USB1
+// #define PKG_CHERRYUSB_HOST
+// #define PKG_CHERRYUSB_HOST_DWC2_KENDRYTE
+// #define PKG_CHERRYUSB_HOST_RTL8152
+// #define PKG_CHERRYUSB_HOST_TEMPLATE
+// #define CHERRYUSB_HOST_USING_USB0
 
 #define PKG_CHERRYUSB_DEVICE
 #define PKG_CHERRYUSB_DEVICE_HS
 #define PKG_CHERRYUSB_DEVICE_DWC2_KENDRYTE
 #define PKG_CHERRYUSB_DEVICE_CDC_ACM
 #define PKG_CHERRYUSB_DEVICE_MSC
-#define PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MSC
+#define PKG_CHERRYUSB_DEVICE_MTP
 #define CHERRYUSB_DEVICE_USING_USB0
+#define PKG_CHERRYUSB_DEVICE_TEMPLATE_CDC_ACM_MTP
 
 /*Using fast boot*/
 #define RT_FASTBOOT
@@ -271,6 +275,7 @@
 #define LWIP_SO_LINGER 0
 #define LWIP_NETIF_LOOPBACK 0
 #define RT_LWIP_USING_PING
+#define LWIP_USING_DHCPD
 // #define RT_LWIP_DEBUG
 // #define RT_LWIP_SOCKETS_DEBUG
 // #define RT_LWIP_PBUF_DEBUG
@@ -296,6 +301,20 @@
 
 
 /* Wi-Fi */
+#define RT_USING_WIFI
+#define RT_WLAN_DEVICE_AP_NAME "ap"
+#define RT_WLAN_DEVICE_STA_NAME "sta"
+#define RT_WLAN_DEFAULT_PROT "lwip"
+#define RT_WLAN_MANAGE_ENABLE
+#define RT_WLAN_MSH_CMD_ENABLE
+#define RT_WLAN_PROT_ENABLE
+#define RT_WLAN_PROT_LWIP_ENABLE
+#define RT_WLAN_CFG_ENABLE
+#define RT_WLAN_WORK_THREAD_ENABLE
+#define RT_WLAN_WORKQUEUE_THREAD_SIZE 4096
+
+#define RT_USING_REALTEK
+#define REALTEK_SDIO_DEV 0
 
 /* Marvell WiFi */
 
@@ -351,6 +370,10 @@
 
 
 /* touch drivers */
+#define RT_USING_TOUCH
+#define RT_USING_FT5316
+#define FT5316_I2C_DEV "i2c4"
+#define FT5316_I2C_ADDR 0x38
 
 
 /* Kendryte SDK */
@@ -435,5 +458,8 @@
 
 #define RT_USING_MPP
 #define RT_USING_SDIO
+#define RT_USING_SDIO0
 #define RT_USING_SDIO1
+#define SD_SDIO_DEV 1
+
 #endif

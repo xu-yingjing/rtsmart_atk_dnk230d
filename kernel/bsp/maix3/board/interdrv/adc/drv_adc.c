@@ -106,8 +106,68 @@ static int k_adc_drv_init()
     return RT_EOK;
 }
 
+static int k_adc_drv_enabled(k_adc_regs_t *adc_regs)
+{
+    rt_uint32_t reg;
+
+    reg = readl(&adc_regs->trim_reg);
+    reg |= 0x1;
+    writel(reg, &adc_regs->trim_reg);
+
+    return RT_EOK;
+}
+
+static int k_adc_drv_disabled(k_adc_regs_t *adc_regs)
+{
+    rt_uint32_t reg;
+
+    reg = readl(&adc_regs->trim_reg);
+    reg = reg & (~(0x1));
+    writel(reg, &adc_regs->trim_reg);
+
+    return RT_EOK;
+}
+
 rt_err_t k230_adc_enabled(struct rt_adc_device *device, rt_uint32_t channel, rt_bool_t enabled)
 {
+    if (channel >= ADC_MAX_CHANNEL)
+    {
+        return RT_ERROR;
+    }
+
+    if (enabled)
+    {
+        if (adc_dev.chn[channel].enabled)
+        {
+            return RT_EOK;
+        }
+        else
+        {
+            adc_dev.chn[channel].enabled = 1;
+            adc_dev.use_num++;
+        }
+        // if (adc_dev.use_num == 1)
+        // {
+        //     k_adc_drv_enabled(adc_dev.adc_regs);
+        // }
+    }
+    else
+    {
+        if (!adc_dev.chn[channel].enabled)
+        {
+            return RT_EOK;
+        }
+        else
+        {
+            adc_dev.chn[channel].enabled = 0;
+            adc_dev.use_num--;
+        }
+        // if (adc_dev.use_num == 0)
+        // {
+        //     k_adc_drv_disabled(adc_dev.adc_regs);
+        // }
+    }
+
     return RT_EOK;
 }
 
@@ -115,6 +175,10 @@ rt_err_t k230_get_adc_value(struct rt_adc_device *device, rt_uint32_t channel, r
 {
     if (channel >= ADC_MAX_CHANNEL)
         return RT_ERROR;
+    
+    if (!adc_dev.chn[channel].enabled){
+        return RT_ERROR;
+    }
 
     writel(channel | 0x10, &adc_dev.adc_regs->cfg_reg);
     while ((readl(&adc_dev.adc_regs->cfg_reg) & 0x10000) == 0);

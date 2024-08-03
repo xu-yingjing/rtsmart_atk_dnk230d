@@ -4488,7 +4488,7 @@ const static void* func_table[] =
     SYSCALL_SIGN(sys_notimpl),    //rt_wqueue_wakeup,
     SYSCALL_SIGN(sys_thread_mdelay),
     SYSCALL_SIGN(sys_sigaction),
-    SYSCALL_SIGN(sys_sigprocmask),
+    SYSCALL_SIGN(sys_thread_sigprocmask),
     SYSCALL_SIGN(sys_tkill),             /* 105 */
     SYSCALL_SIGN(sys_thread_sigprocmask),
 #ifdef ARCH_MM_MMU
