@@ -19,12 +19,56 @@
 #include "usbd_core.h"
 #endif
 
+#ifdef RT_USING_SDIO
+
+static const struct dfs_mount_tbl custom_mount_table[] = {{
+#ifdef CONFIG_BOARD_K230D_CANMV_BPI_ZERO
+                                                "sd10",
+#else
+                                                "sd00",
+#endif
+                                                "/bin", "elm", 0, 0},
+                                            {
+#ifdef CONFIG_BOARD_K230D_CANMV_BPI_ZERO
+                                                "sd11",
+#else
+                                                "sd01",
+#endif
+                                                "/sdcard", "elm", 0, 0},
+                                            {0}};
+
+static int mnt_mount_table(void)
+{
+    int index = 0;
+
+    while (1)
+    {
+        if (custom_mount_table[index].path == NULL) break;
+
+        if (0x00 != dfs_mount(custom_mount_table[index].device_name,
+                      custom_mount_table[index].path,
+                      custom_mount_table[index].filesystemtype,
+                      custom_mount_table[index].rwflag,
+                      custom_mount_table[index].data))
+        {
+            rt_kprintf("mount fs[%s] on %s failed, error %d.\n", custom_mount_table[index].filesystemtype,
+                       custom_mount_table[index].path, errno);
+            return -RT_ERROR;
+        }
+
+        index ++;
+    }
+    return 0;
+}
+#endif
+
 int main(void) {
-  printf("RT-SMART Hello RISC-V\n");
+  printf("CanMV Start\n");
 
 #ifdef RT_USING_SDIO
   while (mmcsd_wait_cd_changed(100) != MMCSD_HOST_PLUGED) {
   }
+  mnt_mount_table();
 #endif //RT_USING_SDIO
 
 #ifdef PKG_CHERRYUSB_HOST
