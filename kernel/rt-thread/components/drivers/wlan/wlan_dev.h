@@ -63,14 +63,19 @@ typedef enum
     RT_WLAN_DEV_EVT_MAX,
 } rt_wlan_dev_event_t;
 
+#define WEP_ENABLED         0x0001
+#define TKIP_ENABLED        0x0002
+#define AES_ENABLED         0x0004
+#define WSEC_SWFLAG         0x0008
+#define AES_CMAC_ENABLED    0x0010
+
 #define SHARED_ENABLED  0x00008000
 #define WPA_SECURITY    0x00200000
 #define WPA2_SECURITY   0x00400000
+#define WPA3_SECURITY	0x00800000
 #define WPS_ENABLED     0x10000000
-#define WEP_ENABLED     0x0001
-#define TKIP_ENABLED    0x0002
-#define AES_ENABLED     0x0004
-#define WSEC_SWFLAG     0x0008
+
+#define IEEE_8021X_ENABLED   0x80000000
 
 #define RT_WLAN_FLAG_STA_ONLY    (0x1 << 0)
 #define RT_WLAN_FLAG_AP_ONLY     (0x1 << 1)
@@ -96,18 +101,29 @@ typedef enum
  */
 typedef enum
 {
-    SECURITY_OPEN           = 0,                                                /* Open security                           */
-    SECURITY_WEP_PSK        = WEP_ENABLED,                                      /* WEP Security with open authentication   */
-    SECURITY_WEP_SHARED     = (WEP_ENABLED | SHARED_ENABLED),                   /* WEP Security with shared authentication */
-    SECURITY_WPA_TKIP_PSK   = (WPA_SECURITY  | TKIP_ENABLED),                   /* WPA Security with TKIP                  */
-    SECURITY_WPA_AES_PSK    = (WPA_SECURITY  | AES_ENABLED),                    /* WPA Security with AES                   */
-    SECURITY_WPA2_AES_PSK   = (WPA2_SECURITY | AES_ENABLED),                    /* WPA2 Security with AES                  */
-    SECURITY_WPA2_TKIP_PSK  = (WPA2_SECURITY | TKIP_ENABLED),                   /* WPA2 Security with TKIP                 */
-    SECURITY_WPA2_MIXED_PSK = (WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED),     /* WPA2 Security with AES & TKIP           */
-    SECURITY_WPS_OPEN       = WPS_ENABLED,                                      /* WPS with open security                  */
-    SECURITY_WPS_SECURE     = (WPS_ENABLED | AES_ENABLED),                      /* WPS with AES security                   */
-    SECURITY_UNKNOWN        = -1,                                               /* May be returned by scan function if security is unknown.
-                                                                                    Do not pass this to the join function! */
+    SECURITY_OPEN           = 0,                                                            /**< Open security                                 */
+    SECURITY_WEP_PSK        = WEP_ENABLED,                                                  /**< WEP PSK Security with open authentication     */
+    SECURITY_WEP_SHARED     = ( WEP_ENABLED | SHARED_ENABLED ),                             /**< WEP PSK Security with shared authentication   */
+    SECURITY_WPA_TKIP_PSK   = ( WPA_SECURITY  | TKIP_ENABLED ),                             /**< WPA PSK Security with TKIP                    */
+    SECURITY_WPA_TKIP_8021X   = ( IEEE_8021X_ENABLED | WPA_SECURITY  | TKIP_ENABLED ),      /**< WPA 8021X Security with TKIP                  */
+    SECURITY_WPA_AES_PSK    = ( WPA_SECURITY  | AES_ENABLED ),                              /**< WPA PSK Security with AES                     */
+    SECURITY_WPA_AES_8021X    = ( IEEE_8021X_ENABLED | WPA_SECURITY  | AES_ENABLED ),       /**< WPA 8021X Security with AES                   */
+    SECURITY_WPA2_AES_PSK   = ( WPA2_SECURITY | AES_ENABLED ),                              /**< WPA2 PSK Security with AES                    */
+    SECURITY_WPA2_AES_8021X   = ( IEEE_8021X_ENABLED | WPA2_SECURITY | WEP_ENABLED ),       /**< WPA2 8021X Security with AES                  */
+    SECURITY_WPA2_TKIP_PSK  = ( WPA2_SECURITY | TKIP_ENABLED ),                             /**< WPA2 PSK Security with TKIP                   */
+    SECURITY_WPA2_TKIP_8021X  = ( IEEE_8021X_ENABLED | WPA2_SECURITY | TKIP_ENABLED ),      /**< WPA2 8021X Security with TKIP                 */
+    SECURITY_WPA2_MIXED_PSK = ( WPA2_SECURITY | AES_ENABLED | TKIP_ENABLED ),               /**< WPA2 PSK Security with AES & TKIP             */
+    SECURITY_WPA_WPA2_MIXED_PSK = ( WPA_SECURITY  | WPA2_SECURITY ),                        /**< WPA/WPA2 PSK Security                         */
+    SECURITY_WPA_WPA2_MIXED_8021X = ( IEEE_8021X_ENABLED | WPA_SECURITY  | WPA2_SECURITY ), /**< WPA/WPA2 8021X Security                       */
+    SECURITY_WPA2_AES_CMAC = ( WPA2_SECURITY | AES_CMAC_ENABLED),                           /**< WPA2 Security with AES and Management Frame Protection                 */
+
+    SECURITY_WPS_OPEN       = WPS_ENABLED,                                                  /**< WPS with open security                  */
+    SECURITY_WPS_SECURE     = (WPS_ENABLED | AES_ENABLED),                                  /**< WPS with AES security                   */
+
+	SECURITY_WPA3_AES_PSK 	= (WPA3_SECURITY | AES_ENABLED),						        /**< WPA3-AES with AES security  */
+
+    SECURITY_UNKNOWN        = -1,                                                           /**< May be returned by scan function if security is unknown. Do not pass this to the join function! */
+
 } rt_wlan_security_t;
 
 typedef enum

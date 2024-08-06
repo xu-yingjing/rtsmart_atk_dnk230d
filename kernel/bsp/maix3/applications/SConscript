@@ -4,6 +4,9 @@ cwd     = GetCurrentDir()
 src	= Glob('*.c')
 CPPPATH = [cwd]
 
+if not GetDepend(['RT_WLAN_MANAGE_ENABLE']):
+    SrcRemove(src, ['wlan_mgmt_dev.c'])
+
 group = DefineGroup('Applications', src, depend = [''], CPPPATH = CPPPATH)
 
 Return('group')
