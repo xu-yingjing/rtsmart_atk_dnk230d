@@ -12,6 +12,7 @@ static rt_int32_t realtek_probe(struct rt_mmcsd_card* card);
 struct sdio_func* wifi_sdio_func;
 struct rt_sdio_function* rtt_sdio_func;
 static struct rt_wlan_device wlan_sta, wlan_ap;
+static uint8_t sta_disconnect_wait = 0;
 
 void Set_WLAN_Power_On(void)
 {
@@ -56,7 +57,10 @@ void wlan_event_indication(rtw_event_indicate_t event, char* buf, int buf_len)
     if (event == WIFI_EVENT_FOURWAY_HANDSHAKE_DONE) {
         rt_wlan_dev_indicate_event_handle(&wlan_sta, RT_WLAN_DEV_EVT_CONNECT, NULL);
     } else if (event == WIFI_EVENT_DISCONNECT) {
-        rt_wlan_dev_indicate_event_handle(&wlan_sta, RT_WLAN_DEV_EVT_DISCONNECT, NULL);
+        if (sta_disconnect_wait) {
+            rt_wlan_dev_indicate_event_handle(&wlan_sta, RT_WLAN_DEV_EVT_DISCONNECT, NULL);
+            sta_disconnect_wait = 0;
+        }
     } else if (event == WIFI_EVENT_STA_ASSOC || event == WIFI_EVENT_STA_DISASSOC) {
         struct rt_wlan_buff buff;
         struct rt_wlan_info wlan_info;
@@ -148,19 +152,28 @@ static rt_err_t wlan_join(struct rt_wlan_device* wlan, struct rt_sta_info* sta_i
 
 static rt_err_t wlan_softap(struct rt_wlan_device* wlan, struct rt_ap_info* ap_info)
 {
-    int ret = wifi_restart_ap(ap_info->ssid.val, ap_info->security, ap_info->key.val,
-        ap_info->ssid.len, ap_info->key.len, ap_info->channel);
-    rt_wlan_dev_indicate_event_handle(&wlan_ap, RT_WLAN_DEV_EVT_AP_START, NULL);
+    int ret;
+
+    wifi_off_coAP();
+    ret = wifi_on_coAP(RTW_MODE_STA_AP);
+    if (ret >= 0)
+        ret = wifi_start_ap(ap_info->ssid.val, ap_info->security, ap_info->key.val,
+            ap_info->ssid.len, ap_info->key.len, ap_info->channel);
+
+    rt_wlan_dev_indicate_event_handle(&wlan_ap, ret < 0 ? RT_WLAN_DEV_EVT_AP_STOP : RT_WLAN_DEV_EVT_AP_START, NULL);
+
     return ret;
 }
 
 static rt_err_t wlan_disconnect(struct rt_wlan_device* wlan)
 {
+    sta_disconnect_wait = 1;
     return wifi_disconnect();
 }
 
 static rt_err_t wlan_ap_stop(struct rt_wlan_device* wlan)
 {
+    wifi_off_coAP();
     rt_wlan_dev_indicate_event_handle(&wlan_ap, RT_WLAN_DEV_EVT_AP_STOP, NULL);
     return 0;
 }
@@ -323,6 +336,8 @@ static rt_int32_t realtek_probe(struct rt_mmcsd_card* card)
     rt_wlan_dev_register(&wlan_ap, RT_WLAN_DEVICE_AP_NAME, &ops, 0, NULL);
     rt_wlan_set_mode(RT_WLAN_DEVICE_STA_NAME, RT_WLAN_STATION);
     rt_wlan_set_mode(RT_WLAN_DEVICE_AP_NAME, RT_WLAN_AP);
+
+    wifi_start_ap("", 0, 0, 0, 0, 1);
 
     return 0;
 }

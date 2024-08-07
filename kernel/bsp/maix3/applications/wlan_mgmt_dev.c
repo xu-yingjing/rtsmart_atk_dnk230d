@@ -15,12 +15,8 @@
 #include <rtdbg.h>
 
 // basic
-#define IOCTRL_WM_GET_AUTORECONNECT 0x00
-#define IOCTRL_WM_SET_AUTORECONNECT 0x01
-#define IOCTRL_WM_GET_POWERSAVE 0x02
-#define IOCTRL_WM_SET_POWERSAVE 0x03
-#define IOCTRL_WM_REGISET_EVT_HDL 0x04
-#define IOCTRL_WM_UNREGISET_EVT_HDL 0x05
+#define IOCTRL_WM_GET_AUTO_RECONNECT 0x00
+#define IOCTRL_WM_SET_AUTO_RECONNECT 0x01
 
 // sta
 #define IOCTRL_WM_STA_CONNECT 0x10
@@ -28,7 +24,7 @@
 #define IOCTRL_WM_STA_IS_CONNECTED 0x12
 #define IOCTRL_WM_STA_GET_MAC 0x13
 #define IOCTRL_WM_STA_SET_MAC 0x14
-#define IOCTRL_WM_STA_GET_INFO 0x15
+#define IOCTRL_WM_STA_GET_AP_INFO 0x15
 #define IOCTRL_WM_STA_GET_RSSI 0x16
 #define IOCTRL_WM_STA_SCAN 0x17
 
@@ -36,8 +32,11 @@
 #define IOCTRL_WM_AP_START  0x20
 #define IOCTRL_WM_AP_STOP  0x21
 #define IOCTRL_WM_AP_IS_ACTIVE  0x22
-#define IOCTRL_WM_AP_GET_STA_INFO  0x23
-#define IOCTRL_WM_AP_DEAUTH_STA  0x24
+#define IOCTRL_WM_AP_GET_INFO  0x23
+#define IOCTRL_WM_AP_GET_STA_INFO  0x24
+#define IOCTRL_WM_AP_DEAUTH_STA  0x25
+#define IOCTRL_WM_AP_GET_COUNTRY  0x26
+#define IOCTRL_WM_AP_SET_COUNTRY  0x27
 
 // network util
 #define IOCTRL_NET_IFCONFIG 0x100
@@ -65,6 +64,26 @@ struct rt_wlan_connect_config {
     };
     rt_wlan_key_t key;
 };
+
+static rt_err_t _wlan_mgmt_dev_cmd_basic_get_auto_reconnect(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    int auto_reconnect = (int)rt_wlan_get_autoreconnect_mode();
+
+    lwp_put_to_user(args, &auto_reconnect, sizeof(int));
+
+    return RT_EOK;
+}
+
+static rt_err_t _wlan_mgmt_dev_cmd_basic_set_auto_reconnect(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    int auto_reconnect = 1;
+
+    lwp_get_from_user(&auto_reconnect, args, sizeof(int));
+
+    rt_wlan_config_autoreconnect((rt_bool_t)(auto_reconnect & 0x01));
+
+    return RT_EOK;
+}
 
 static rt_err_t _wlan_mgmt_dev_cmd_sta_connect(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
 {
@@ -94,6 +113,38 @@ static rt_err_t _wlan_mgmt_dev_cmd_sta_isconnected(struct rt_wlan_mgmt_device *m
     lwp_put_to_user(args, &status, sizeof(int));
 
     return RT_EOK;
+}
+
+static rt_err_t _wlan_mgmt_dev_cmd_sta_get_mac(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    rt_err_t err = RT_EOK;
+    uint8_t mac[6];
+
+    err = rt_wlan_get_mac(mac);
+    lwp_put_to_user(args, mac, sizeof(mac));
+
+    return err;
+}
+
+static rt_err_t _wlan_mgmt_dev_cmd_sta_set_mac(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    uint8_t mac[6];
+
+    lwp_get_from_user(&mac[0], args, sizeof(mac));
+
+    return rt_wlan_set_mac(mac);
+}
+
+static rt_err_t _wlan_mgmt_dev_cmd_sta_get_ap_info(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    rt_err_t err = RT_EOK;
+    struct rt_wlan_info info;
+
+    err = rt_wlan_get_info(&info);
+
+    lwp_put_to_user(args, &info, sizeof(struct rt_wlan_info));
+
+    return err;
 }
 
 static rt_err_t _wlan_mgmt_dev_cmd_sta_get_rssi(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
@@ -171,6 +222,50 @@ static rt_err_t _wlan_mgmt_dev_cmd_ap_isactive(struct rt_wlan_mgmt_device *mgmt_
     return RT_EOK;
 }
 
+static rt_err_t _wlan_mgmt_dev_cmd_ap_get_info(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    rt_err_t err = RT_EOK;
+    struct rt_wlan_info info;
+
+    err = rt_wlan_ap_get_info(&info);
+
+    lwp_put_to_user(args, &info, sizeof(struct rt_wlan_info));
+
+    return err;
+}
+
+static rt_err_t _wlan_mgmt_dev_cmd_ap_get_stations(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    struct rt_wlan_scan_result *result = (struct rt_wlan_scan_result *)args;
+    int32_t result_num;
+
+    int station_num = 0;
+    struct rt_wlan_info *info = NULL;
+
+    station_num = rt_wlan_ap_get_sta_num();
+    lwp_get_from_user(&result_num, &result->num, sizeof(int32_t));
+
+    if(station_num > result_num) {
+        LOG_W("Station count(%d) bigger than user requset(%d)\n", station_num, result_num);
+        station_num = result_num;
+    }
+
+    info = malloc(sizeof(struct rt_wlan_info) * station_num);
+    if(NULL == info) {
+        LOG_E("No memory\n");
+        return -1;
+    }
+
+    rt_wlan_ap_get_sta_info(info, station_num);
+
+    lwp_put_to_user(&result->num, &station_num, sizeof(int32_t));
+    lwp_put_to_user(result->info, info, sizeof(struct rt_wlan_info) * station_num);
+
+    free(info);
+
+    return RT_EOK;
+}
+
 static rt_err_t _wlan_mgmt_dev_cmd_ap_deauth_sta(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
 {
     uint8_t mac[6];
@@ -178,6 +273,24 @@ static rt_err_t _wlan_mgmt_dev_cmd_ap_deauth_sta(struct rt_wlan_mgmt_device *mgm
     lwp_get_from_user(mac, args, sizeof(mac));
 
     return rt_wlan_ap_deauth_sta(mac);
+}
+
+static rt_err_t _wlan_mgmt_dev_cmd_ap_get_country(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    int country = (int)rt_wlan_ap_get_country();
+
+    lwp_put_to_user(args, &country, sizeof(int));
+
+    return RT_EOK;
+}
+
+static rt_err_t _wlan_mgmt_dev_cmd_ap_set_country(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    int country = 0;
+
+    lwp_get_from_user(&country, args, sizeof(int));
+
+    return rt_wlan_ap_set_country((rt_country_code_t)country);
 }
 
 static rt_err_t _wlan_mgmt_dev_cmd_net_ifconfig(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
@@ -251,6 +364,14 @@ static rt_err_t _wlan_mgmt_dev_cmd_net_ifconfig(struct rt_wlan_mgmt_device *mgmt
 
 static struct rt_wlan_mgmt_device_cmd_handle cmd_handles[] = {
     // basic
+    {
+        .cmd = IOCTRL_WM_GET_AUTO_RECONNECT,
+        .func = _wlan_mgmt_dev_cmd_basic_get_auto_reconnect,
+    },
+    {
+        .cmd = IOCTRL_WM_SET_AUTO_RECONNECT,
+        .func = _wlan_mgmt_dev_cmd_basic_set_auto_reconnect,
+    },
 
     // station
     {
@@ -264,6 +385,18 @@ static struct rt_wlan_mgmt_device_cmd_handle cmd_handles[] = {
     {
         .cmd = IOCTRL_WM_STA_IS_CONNECTED,
         .func = _wlan_mgmt_dev_cmd_sta_isconnected,
+    },
+    {
+        .cmd = IOCTRL_WM_STA_GET_MAC,
+        .func = _wlan_mgmt_dev_cmd_sta_get_mac,
+    },
+    {
+        .cmd = IOCTRL_WM_STA_SET_MAC,
+        .func = _wlan_mgmt_dev_cmd_sta_set_mac,
+    },
+    {
+        .cmd = IOCTRL_WM_STA_GET_AP_INFO,
+        .func = _wlan_mgmt_dev_cmd_sta_get_ap_info,
     },
     {
         .cmd = IOCTRL_WM_STA_GET_RSSI,
@@ -288,8 +421,24 @@ static struct rt_wlan_mgmt_device_cmd_handle cmd_handles[] = {
         .func = _wlan_mgmt_dev_cmd_ap_isactive,
     },
     {
+        .cmd = IOCTRL_WM_AP_GET_INFO,
+        .func = _wlan_mgmt_dev_cmd_ap_get_info,
+    },
+    {
+        .cmd = IOCTRL_WM_AP_GET_STA_INFO,
+        .func = _wlan_mgmt_dev_cmd_ap_get_stations,
+    },
+    {
         .cmd = IOCTRL_WM_AP_DEAUTH_STA,
         .func = _wlan_mgmt_dev_cmd_ap_deauth_sta,
+    },
+    {
+        .cmd = IOCTRL_WM_AP_GET_COUNTRY,
+        .func = _wlan_mgmt_dev_cmd_ap_get_country,
+    },
+    {
+        .cmd = IOCTRL_WM_AP_SET_COUNTRY,
+        .func = _wlan_mgmt_dev_cmd_ap_set_country,
     },
 
     // network
