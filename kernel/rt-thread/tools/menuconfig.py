@@ -50,6 +50,9 @@ def mk_rtconfig(filename):
     rtconfig.write('#ifndef RT_CONFIG_H__\n')
     rtconfig.write('#define RT_CONFIG_H__\n\n')
 
+    if os.path.isfile('k_autoconf_comm.h'):
+        rtconfig.write('#include "k_autoconf_comm.h"\n\n')
+
     empty_line = 1
 
     for line in config:

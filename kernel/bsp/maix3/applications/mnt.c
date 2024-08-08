@@ -5,24 +5,23 @@
 #include <dfs_romfs.h>
 
 const struct romfs_dirent _root_dirent[] = {
-    {ROMFS_DIRENT_DIR, "bin", RT_NULL, 0},
+    {ROMFS_DIRENT_DIR, "bin",     RT_NULL, 0},
+    {ROMFS_DIRENT_DIR, "sdcard",  RT_NULL, 0},
 #ifdef RT_USING_DFS_DEVFS
-    {ROMFS_DIRENT_DIR, "dev", RT_NULL, 0},
-#endif
-#ifdef RT_USING_SDIO
-    {ROMFS_DIRENT_DIR, "sdcard", RT_NULL, 0},
+    {ROMFS_DIRENT_DIR, "dev",     RT_NULL, 0},
 #endif
 #ifdef RT_USING_DFS_NFS
-    {ROMFS_DIRENT_DIR, "nfs", RT_NULL, 0},
+    {ROMFS_DIRENT_DIR, "nfs",     RT_NULL, 0},
 #endif
-#ifdef RT_USING_PROC
-    {ROMFS_DIRENT_DIR, "proc", RT_NULL, 0},
+#ifdef RT_USING_DFS_PROCFS
+    {ROMFS_DIRENT_DIR, "proc",    RT_NULL, 0},
 #endif
 };
 
-const struct romfs_dirent romfs_root = {
-    ROMFS_DIRENT_DIR, "/", (rt_uint8_t *)_root_dirent,
-    sizeof(_root_dirent) / sizeof(_root_dirent[0])};
+const struct romfs_dirent romfs_root =
+{
+  ROMFS_DIRENT_DIR, "/", (rt_uint8_t *)_root_dirent, sizeof(_root_dirent) / sizeof(_root_dirent[0])
+};
 
 int mnt_init(void) {
   rt_err_t ret;

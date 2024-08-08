@@ -1,0 +1,94 @@
+menu "Components Configuration"
+
+    menuconfig ENABLE_CHERRY_USB
+        bool "Enable CherryUSB"
+
+        if ENABLE_CHERRY_USB
+            config CHERRYUSB_DEVICE_DWC2_K230
+                def_bool y
+
+            config CHERRY_USB_OSAL_RTTHREAD
+                def_bool y
+
+            menuconfig ENABLE_CHERRY_USB_DEVICE
+                bool "Enable CherryUSB Device"
+
+                if ENABLE_CHERRY_USB_DEVICE
+
+                    choice CHERRY_USB_DEVICE_USING_DEV
+                        bool "CherryUSB Device Use Device"
+                        default CHERRY_USB_DEVICE_USING_DEV0
+
+                        config CHERRY_USB_DEVICE_USING_DEV0
+                            bool "Using Dev0"
+
+                        config CHERRY_USB_DEVICE_USING_DEV1
+                            bool "Using Dev1"
+                    endchoice
+
+                    config CHERRY_USB_DEVICE_USING_DEV
+                        int
+                        default 0 if CHERRY_USB_DEVICE_USING_DEV0
+                        default 1 if CHERRY_USB_DEVICE_USING_DEV1
+
+                    config CHERRY_USB_DEVICE_SPEED_HS
+                        def_bool y
+
+                    config CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM
+                        bool "Enable CDC ACM"
+
+                    config CHERRY_USB_DEVICE_ENABLE_CLASS_MSC
+                        bool "Enable MSC"
+
+                    config CHERRY_USB_DEVICE_ENABLE_CLASS_MTP
+                        bool "Enable MTP"
+                        select CHERRY_USB_DEVICE_ENABLE_CLASS_MSC
+                endif
+
+            menuconfig ENABLE_CHERRY_USB_HOST
+                bool "Enable CherryUSB Host"
+
+                if ENABLE_CHERRY_USB_HOST
+
+                    choice CHERRY_USB_HOST_USING_DEV
+                        bool "CherryUSB Host Use Device"
+                        default CHERRY_USB_HOST_USING_DEV0
+
+                        config CHERRY_USB_HOST_USING_DEV0
+                            bool "Using Dev0"
+
+                        config CHERRY_USB_HOST_USING_DEV1
+                            bool "Using Dev1"
+                    endchoice
+
+                    config CHERRY_USB_HOST_USING_DEV
+                        int
+                        default 0 if CHERRY_USB_HOST_USING_DEV0
+                        default 1 if CHERRY_USB_HOST_USING_DEV1
+
+                endif
+        endif
+
+    config RT_USING_DEVMEM2
+        bool "Enable devmem2 command"
+        def_bool y
+
+    config RT_USING_USAGE
+        bool "Enable CPU usage"
+        def_bool y
+
+    config ENABLE_CANMV_USB_DEV
+        bool "Enable USB Device(CDC&MTP) for Canmv Use"
+        default n
+        depends on ENABLE_CHERRY_USB_DEVICE
+
+    config ENABLE_WLAN_MGMT_DEV
+        bool "Enable Wlan Mgmt Device for Canmv Use"
+        default n
+        depends on RT_USING_WIFI
+
+    config ENABLE_MEM_INFO_DEV
+        bool "Enable meminfo Device for Canmv Use"
+        default n
+
+endmenu

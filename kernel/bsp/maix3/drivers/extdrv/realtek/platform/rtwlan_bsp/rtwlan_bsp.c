@@ -39,12 +39,13 @@ static struct rt_sdio_driver realtek_drv = {
 
 int realtek_init(void)
 {
-#if REALTEK_SDIO_DEV == 0
+#ifdef REALTEK_SDIO_DEV0
     kd_sdhci0_reset(0);
     rt_thread_mdelay(20);
     kd_sdhci0_reset(1);
     rt_thread_mdelay(50);
 #endif
+
     sdio_register_driver(&realtek_drv);
     kd_sdhci_change(REALTEK_SDIO_DEV);
 

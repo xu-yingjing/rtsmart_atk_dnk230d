@@ -173,6 +173,14 @@ if RT_USING_DFS
             default "192.168.1.5:/"
     endif
 
+    config RT_USING_PROC
+        def_bool n
+
+    config RT_USING_DFS_PROCFS
+        bool "Enable proc files system"
+        select RT_USING_PROC
+        default n
+
 endif
 
 endmenu

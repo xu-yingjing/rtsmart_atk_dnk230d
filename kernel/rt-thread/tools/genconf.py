@@ -12,6 +12,9 @@ def genconfig() :
     except :
         print("Open rtconfig.h file failed.")
 
+    # remove #include header.
+    contents = '\n'.join(line for line in contents.split('\n') if '#include' not in line)
+
     PreProcessor.process_contents(contents)
     options = PreProcessor.cpp_namespace
 

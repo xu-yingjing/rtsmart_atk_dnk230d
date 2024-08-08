@@ -1,10 +1,12 @@
+#include "rtthread.h"
+
+#include "dfs_poll.h"
+#include "dfs_file.h"
+
 #include "ipc/waitqueue.h"
 #include "usbd_core.h"
 #include "usbd_cdc.h"
 #include "usbd_mtp.h"
-#include "dfs_poll.h"
-#include "dfs_file.h"
-#include "rtthread.h"
 
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
@@ -29,25 +31,31 @@
 #endif
 
 /*!< config descriptor size */
-#define ENABLE_USB_MTP 1
-#if ENABLE_USB_MTP
-#define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN + MTP_DESCRIPTOR_LEN)
+#if defined (CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM)
+    #define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN)
+#elif defined (CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM) && defined(CHERRY_USB_DEVICE_ENABLE_CLASS_MTP)
+    #define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN + MTP_DESCRIPTOR_LEN)
 #else
-#define USB_CONFIG_SIZE (9 + CDC_ACM_DESCRIPTOR_LEN)
+#error "Must enable CDC or CDC and MTP"
 #endif
 
 /*!< global descriptor */
 static const uint8_t cdc_msc_descriptor[] = {
     USB_DEVICE_DESCRIPTOR_INIT(USB_2_0, 0xEF, 0x02, 0x01, USBD_VID, USBD_PID, 0x0100, 0x01),
-    #if ENABLE_USB_MTP
-    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x03, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    #else
+
+#if defined (CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM)
     USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x02, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
-    #endif
+#elif defined (CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM) && defined(CHERRY_USB_DEVICE_ENABLE_CLASS_MTP)
+    USB_CONFIG_DESCRIPTOR_INIT(USB_CONFIG_SIZE, 0x03, 0x01, USB_CONFIG_BUS_POWERED, USBD_MAX_POWER),
+#endif
+
+#if defined (CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM)
     CDC_ACM_DESCRIPTOR_INIT(0x00, CDC_INT_EP, CDC_OUT_EP, CDC_IN_EP, CDC_MAX_MPS, 0x02),
-    #if ENABLE_USB_MTP
+#endif
+
+#if defined (CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM) && defined(CHERRY_USB_DEVICE_ENABLE_CLASS_MTP)
     MTP_DESCRIPTOR_INIT(0x02, MTP_OUT_EP, MTP_IN_EP, MTP_INT_EP, 0x00),
-    #endif
+#endif
     ///////////////////////////////////////
     /// string0 descriptor
     ///////////////////////////////////////
@@ -129,8 +137,6 @@ static USB_MEM_ALIGNX uint8_t usb_read_buffer[4096];
 static uint32_t actual_read;
 static struct rt_semaphore cdc_read_sem, cdc_write_sem;
 
-static void cdc_device_init(void);
-
 static void event_handler(uint8_t busid, uint8_t event)
 {
     if (event == USBD_EVENT_RESET) {
@@ -140,30 +146,6 @@ static void event_handler(uint8_t busid, uint8_t event)
         cdc_device_connect = 1;
         usbd_ep_start_read(CDC_DEV_BUSID, CDC_OUT_EP, usb_read_buffer, sizeof(usb_read_buffer));
     }
-}
-
-void cdc_acm_mtp_init(void)
-{
-    cdc_device_init();
-    usbd_desc_register(CDC_DEV_BUSID, cdc_msc_descriptor);
-    usbd_cdc_acm_init_intf(CDC_DEV_BUSID, &intf0);
-    usbd_cdc_acm_init_intf(CDC_DEV_BUSID, &intf1);
-    usbd_add_interface(CDC_DEV_BUSID, &intf0);
-    usbd_add_interface(CDC_DEV_BUSID, &intf1);
-    usbd_add_endpoint(CDC_DEV_BUSID, &cdc_out_ep);
-    usbd_add_endpoint(CDC_DEV_BUSID, &cdc_in_ep);
-#if ENABLE_USB_MTP
-    usbd_mtp_init_intf(&intf2, MTP_OUT_EP, MTP_IN_EP, MTP_INT_EP);
-    usbd_add_interface(CDC_DEV_BUSID, &intf2);
-#endif
-    void *usb_base;
-#ifdef CHERRYUSB_DEVICE_USING_USB0
-    usb_base = rt_ioremap((void *)0x91500000UL, 0x10000);
-#else
-    usb_base = rt_ioremap((void *)0x91540000UL, 0x10000);
-#endif
-
-    usbd_initialize(CDC_DEV_BUSID, (uint32_t)usb_base, event_handler);
 }
 
 static void usbd_cdc_acm_bulk_out(uint8_t busid, uint8_t ep, uint32_t nbytes)
@@ -254,4 +236,24 @@ static void cdc_device_init(void)
     cdc_device.fops = &cdc_ops;
     rt_sem_init(&cdc_read_sem, "cdc_read", 0, RT_IPC_FLAG_FIFO);
     rt_sem_init(&cdc_write_sem, "cdc_write", 1, RT_IPC_FLAG_FIFO);
+}
+
+void cdc_acm_mtp_init(void *usb_base)
+{
+    cdc_device_init();
+
+    usbd_desc_register(CDC_DEV_BUSID, cdc_msc_descriptor);
+    usbd_cdc_acm_init_intf(CDC_DEV_BUSID, &intf0);
+    usbd_cdc_acm_init_intf(CDC_DEV_BUSID, &intf1);
+    usbd_add_interface(CDC_DEV_BUSID, &intf0);
+    usbd_add_interface(CDC_DEV_BUSID, &intf1);
+    usbd_add_endpoint(CDC_DEV_BUSID, &cdc_out_ep);
+    usbd_add_endpoint(CDC_DEV_BUSID, &cdc_in_ep);
+
+#if defined(CHERRY_USB_DEVICE_ENABLE_CLASS_MTP)
+    usbd_mtp_init_intf(&intf2, MTP_OUT_EP, MTP_IN_EP, MTP_INT_EP);
+    usbd_add_interface(CDC_DEV_BUSID, &intf2);
+#endif
+
+    usbd_initialize(CDC_DEV_BUSID, (uint32_t)usb_base, event_handler);
 }

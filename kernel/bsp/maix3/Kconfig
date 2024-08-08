@@ -10,16 +10,25 @@ config RTT_DIR
     option env="RTT_ROOT"
     default "../../rt-thread"
 
-config PKGS_DIR
-    string
-    option env="PKGS_ROOT"
-    default "packages"
+#config PKGS_DIR
+#    string
+#    option env="PKGS_ROOT"
+#    default "packages"
 
 source "$RTT_DIR/Kconfig"
-source "$PKGS_DIR/Kconfig"
+
+# We do not use online packages
+#source "$PKGS_DIR/Kconfig"
+
+# Canmv Spec
+source "applications/Kconfig"
+source "board/Kconfig"
+source "drivers/Kconfig"
+source "components/Kconfig"
+
 source "testcase/kernel/Kconfig"
 
-config BOARD_fpgac908
+config CHIP_K230
     bool
     select ARCH_RISCV64
     select RT_USING_COMPONENTS_INIT

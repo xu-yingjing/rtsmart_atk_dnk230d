@@ -8,6 +8,7 @@
 #include "usb_config.h"
 #include "usb_log.h"
 
+#ifdef ENABLE_CHERRY_USB
 #define DEFAULT_USB_HCLK_FREQ_MHZ 200
 
 uint32_t SystemCoreClock = (DEFAULT_USB_HCLK_FREQ_MHZ * 1000 * 1000);
@@ -29,7 +30,8 @@ static void sysctl_reset_hw_done(volatile uint32_t *reset_reg, uint8_t reset_bit
 #define USB_DMPULLDOWN0 	(1<<8)
 #define USB_DPPULLDOWN0 	(1<<9)
 
-#ifdef PKG_CHERRYUSB_HOST
+// USB Host
+#ifdef ENABLE_CHERRY_USB_HOST
 static void usb_hc_interrupt_cb(int irq, void *arg_pv)
 {
     // rt_kprintf("\nusb_hc_interrupt_cb\n");
@@ -37,27 +39,11 @@ static void usb_hc_interrupt_cb(int irq, void *arg_pv)
     USBH_IRQHandler(0);
 }
 
-#ifdef CHERRYUSB_HOST_USING_USB1
-void usb_hc_low_level_init(void)
+uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
-    sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 1, 29);
-
-    uint32_t *hs_reg = (uint32_t *)rt_ioremap((void *)(0x91585000 + 0x9C), 0x1000);
-    uint32_t usb_ctl3 = *hs_reg | USB_IDPULLUP0;
-
-    *hs_reg = usb_ctl3 | (USB_DMPULLDOWN0 | USB_DPPULLDOWN0);
-    
-    rt_iounmap(hs_reg);
-
-    rt_hw_interrupt_install(174, usb_hc_interrupt_cb, NULL, "usbh");
-    rt_hw_interrupt_umask(174);
+    return 0;
 }
-
-void usb_hc_low_level_deinit(void)
-{
-    rt_hw_interrupt_mask(174);
-}
-#else
+#ifdef CHERRY_USB_HOST_USING_DEV0
 void usb_hc_low_level_init(void)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 0, 28);
@@ -77,21 +63,44 @@ void usb_hc_low_level_deinit(void)
 {
     rt_hw_interrupt_mask(173);
 }
-#endif
-uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
+#elif CHERRY_USB_HOST_USING_DEV1
+void usb_hc_low_level_init(void)
 {
-    return 0;
+    sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 1, 29);
+
+    uint32_t *hs_reg = (uint32_t *)rt_ioremap((void *)(0x91585000 + 0x9C), 0x1000);
+    uint32_t usb_ctl3 = *hs_reg | USB_IDPULLUP0;
+
+    *hs_reg = usb_ctl3 | (USB_DMPULLDOWN0 | USB_DPPULLDOWN0);
+
+    rt_iounmap(hs_reg);
+
+    rt_hw_interrupt_install(174, usb_hc_interrupt_cb, NULL, "usbh");
+    rt_hw_interrupt_umask(174);
 }
+
+void usb_hc_low_level_deinit(void)
+{
+    rt_hw_interrupt_mask(174);
+}
+#else
+#error "Usb device select error"
 #endif
 
-#ifdef PKG_CHERRYUSB_DEVICE
+#endif // ENABLE_CHERRY_USB_HOST
+
+// USB Device
+#ifdef ENABLE_CHERRY_USB_DEVICE
 static void usb_dc_interrupt_cb(int irq, void *arg_pv)
 {
     extern void USBD_IRQHandler(uint8_t busid);
     USBD_IRQHandler(0);
 }
-
-#ifdef CHERRYUSB_DEVICE_USING_USB0
+uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base)
+{
+    return 0;
+}
+#ifdef CHERRY_USB_DEVICE_USING_DEV0
 void usb_dc_low_level_init(void)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 0, 28);
@@ -107,7 +116,7 @@ void usb_dc_low_level_deinit(void)
 {
     rt_hw_interrupt_mask(173);
 }
-#else
+#elif CHERRY_USB_DEVICE_USING_DEV1
 void usb_dc_low_level_init(void)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 1, 29);
@@ -123,9 +132,10 @@ void usb_dc_low_level_deinit(void)
 {
     rt_hw_interrupt_mask(174);
 }
-#endif
-uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base)
-{
-    return 0;
-}
-#endif
+#else
+#error "Usb device select error"
+#endif 
+
+#endif // ENABLE_CHERRY_USB_DEVICE
+
+#endif // ENABLE_CHERRY_USB

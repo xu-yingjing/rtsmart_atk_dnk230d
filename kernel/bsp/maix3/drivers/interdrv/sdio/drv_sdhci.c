@@ -916,8 +916,8 @@ rt_int32_t kd_sdhci_init(void)
     mmcsd_host1->private_data = sdhci_host1;
     sdhci_host1->host = mmcsd_host1;
 #endif
-#ifdef SD_SDIO_DEV
-    kd_sdhci_change(SD_SDIO_DEV);
+#ifdef SDCARD_ON_SDIO_DEV
+    kd_sdhci_change(SDCARD_ON_SDIO_DEV);
 #endif
     rt_iounmap(hi_sys_virt_addr);
     return 0;

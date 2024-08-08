@@ -49,11 +49,11 @@ config UTEST_ADC
     bool "ADC test"
     default n
 
-config RT_USING_GPIO
+config UTEST_GPIO
     bool "GPIO test"
     default n
 
-config RT_USING_SPI
+config UTEST_SPI
     bool "SPI test"
     default n
 

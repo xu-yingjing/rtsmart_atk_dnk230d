@@ -1,0 +1,72 @@
+menu "Drivers Configuration"
+
+    config RT_USING_GPIO
+        bool "Enable GPIO Driver"
+        default n
+
+    config RT_USING_SPI
+        bool "Enable SPI Driver"
+        default n
+
+    config RT_USING_REGULATOR
+        bool "Enable regulator Driver"
+        default n
+
+    menuconfig RT_USING_SDIO
+        bool "Enable SDIO Driver"
+
+        if RT_USING_SDIO
+            config RT_USING_SDIO0
+                bool "Enable SDIO0"
+                default n
+
+            if RT_USING_SDIO0
+                config RT_SDIO0_EMMC
+                    bool "SDIO0 device is eMMC"
+                    default n
+                config RT_SDIO0_1V8
+                    bool "SDIO0 device is 1.8V"
+                    default n
+            endif
+
+            config RT_USING_SDIO1
+                bool "Enable SDIO1"
+                default n
+
+            choice SDCARD_ON_SDIO_DEV
+                bool "SdCard is on SDIOx"
+
+                config SDCARD_ON_SDIO_DEV0
+                    bool "SdCard is on SDIO0"
+
+                config SDCARD_ON_SDIO_DEV1
+                    bool "SdCard is on SDIO1"
+            endchoice
+
+            config SDCARD_ON_SDIO_DEV
+                int 
+                default 0 if SDCARD_ON_SDIO_DEV0
+                default 1 if SDCARD_ON_SDIO_DEV1
+        endif
+
+    menuconfig RT_USING_REALTEK
+        bool "Enable Realtek WiFi Driver"
+
+        if RT_USING_REALTEK
+            choice REALTEK_SDIO_DEV
+                bool "Realtek Wifi Use SDIO Device"
+
+                config REALTEK_SDIO_DEV0
+                    bool "Using SDIO0"
+                config REALTEK_SDIO_DEV1
+                    bool "Using SDIO1"
+            endchoice
+
+            config REALTEK_SDIO_DEV
+                int
+                default 0 if REALTEK_SDIO_DEV0
+                default 1 if REALTEK_SDIO_DEV1
+
+        endif
+
+endmenu

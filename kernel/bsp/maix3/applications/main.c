@@ -6,36 +6,47 @@
  * Change Logs:
  * Date           Author       Notes
  */
-
-#include <dfs_fs.h>
-#include <rthw.h>
-#include <rtthread.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef PKG_CHERRYUSB_HOST
-#include "usbh_core.h"
-#endif
-#ifdef PKG_CHERRYUSB_DEVICE
+
+#include <rtthread.h>
+#include <rthw.h>
+
+#include <dfs_fs.h>
+#include <ioremap.h>
+
+#include <msh.h>
+
+#ifdef ENABLE_CHERRY_USB
+
+#ifdef ENABLE_CHERRY_USB_DEVICE
 #include "usbd_core.h"
+#endif // ENABLE_CHERRY_USB_DEVICE
+
+#ifdef ENABLE_CHERRY_USB_HOST
+#include "usbh_core.h"
+#endif // ENABLE_CHERRY_USB_HOST
+
+#if defined(ENABLE_CHERRY_USB_DEVICE) && defined (ENABLE_CHERRY_USB_HOST)
+  #if CHERRY_USB_DEVICE_USING_DEV + CHERRY_USB_HOST_USING_DEV != 1
+    #error "Can not set same usb device as device and host"
+  #endif
 #endif
+
+#endif // ENABLE_CHERRY_USB
 
 #ifdef RT_USING_SDIO
 
-static const struct dfs_mount_tbl custom_mount_table[] = {{
-#ifdef CONFIG_BOARD_K230D_CANMV_BPI_ZERO
-                                                "sd10",
-#else
-                                                "sd00",
-#endif
-                                                "/bin", "elm", 0, 0},
-                                            {
-#ifdef CONFIG_BOARD_K230D_CANMV_BPI_ZERO
-                                                "sd11",
-#else
-                                                "sd01",
-#endif
-                                                "/sdcard", "elm", 0, 0},
-                                            {0}};
+#define TO_STRING(x) #x
+#define CONCAT(x, y, z) x y z
+
+#define SD_DEV_PART(s, d, p) CONCAT(s, TO_STRING(d), p)
+
+static const struct dfs_mount_tbl custom_mount_table[] = {
+  {SD_DEV_PART("sd", SDCARD_ON_SDIO_DEV, "0"), "/bin", "elm", 0, 0},
+  {SD_DEV_PART("sd", SDCARD_ON_SDIO_DEV, "1"), "/sdcard", "elm", 0, 0},
+  {0}
+};
 
 static int mnt_mount_table(void)
 {
@@ -71,20 +82,24 @@ int main(void) {
   mnt_mount_table();
 #endif //RT_USING_SDIO
 
-#ifdef PKG_CHERRYUSB_HOST
+#ifdef ENABLE_CHERRY_USB
   void *usb_base;
-#ifdef CHERRYUSB_HOST_USING_USB1
-  usb_base = (void *)rt_ioremap((void *)0x91540000UL, 0x10000);
-#else
-  usb_base = (void *)rt_ioremap((void *)0x91500000UL, 0x10000);
-#endif
+  const void *usb_dev_addr[2] = {(void *)0x91500000UL, (void *)0x91540000UL};
+
+#ifdef ENABLE_CHERRY_USB_DEVICE
+  usb_base = (void *)rt_ioremap((void *)usb_dev_addr[CHERRY_USB_DEVICE_USING_DEV], 0x10000);
+
+  extern void cdc_acm_mtp_init(void *usb_base);
+  cdc_acm_mtp_init(usb_base);
+#endif // ENABLE_CHERRY_USB_DEVICE
+
+#ifdef ENABLE_CHERRY_USB_HOST
+  usb_base = (void *)rt_ioremap((void *)usb_dev_addr[CHERRY_USB_HOST_USING_DEV], 0x10000);
   usbh_initialize(0, (uint32_t)usb_base);
-#endif
-#ifdef PKG_CHERRYUSB_DEVICE
-  extern void cdc_acm_mtp_init(void);
-  cdc_acm_mtp_init();
+#endif // ENABLE_CHERRY_USB_HOST
+
   rt_thread_delay(10);
-#endif
+#endif //ENABLE_CHERRY_USB
 
   msh_exec("/sdcard/micropython", 32);
 

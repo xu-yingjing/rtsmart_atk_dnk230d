@@ -22,6 +22,7 @@ Debug
 *.i
 *.d
 *.img
+.config
 packages
 cconfig.h
 GPUCache
@@ -39,14 +40,14 @@ testcases/
 __pycache__/
 *.dblite
 
-__pycache__
-kernel/bsp/maix3/k_autoconf_comm.h
-
 userapps/root/bin/
+
+k_autoconf_comm.h
+rtconfig.h
 
 rtthread.bin
 rtthread.elf
 rtthread.map
-cconfig.h
 
-.sconsign.dblite
+link_stacksize.lds
+kconfig-mconf
