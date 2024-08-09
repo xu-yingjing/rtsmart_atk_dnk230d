@@ -7,6 +7,7 @@
 
 #include <netdev_ipaddr.h>
 #include <netdev.h>
+#include <netdb.h>
 
 #include <wlan_mgnt.h>
 
@@ -40,6 +41,7 @@
 
 // network util
 #define IOCTRL_NET_IFCONFIG 0x100
+#define IOCTRL_NET_GETHOSTBYNAME 0x101
 
 struct rt_wlan_mgmt_device
 {
@@ -362,6 +364,42 @@ static rt_err_t _wlan_mgmt_dev_cmd_net_ifconfig(struct rt_wlan_mgmt_device *mgmt
     return RT_EOK;
 }
 
+static rt_err_t _wlan_mgmt_dev_cmd_net_gethostbyname(struct rt_wlan_mgmt_device *mgmt_dev, void *args)
+{
+    struct result {
+        uint8_t ip[4];
+        int name_len; // max 256
+        char name[0];
+    };
+
+    uint64_t buffer[(sizeof(struct result) + 256) / sizeof(uint64_t) + 1];
+    struct result *request = (struct result *)args;
+    struct result *result = (struct result *)buffer;
+    struct hostent *host = NULL;
+
+    lwp_get_from_user(&result->name_len, &request->name_len, sizeof(int));
+    if(256 < result->name_len) {
+        LOG_E("Host name too long\n");
+        return -1;
+    }
+
+    lwp_get_from_user(&result->name[0], &request->name[0], result->name_len);
+    result->name[result->name_len] = '\0';
+    if(NULL == (host = gethostbyname(result->name))) {
+        LOG_W("get host failed1, %s\n", result->name);
+        return -2;
+    }
+
+    if(NULL == host->h_addr_list) {
+        LOG_W("get host failed2, %s\n", result->name);
+        return -2;
+    }
+
+    lwp_put_to_user(request->ip, host->h_addr_list[0], sizeof(request->ip));
+
+    return 0;
+}
+
 static struct rt_wlan_mgmt_device_cmd_handle cmd_handles[] = {
     // basic
     {
@@ -445,6 +483,10 @@ static struct rt_wlan_mgmt_device_cmd_handle cmd_handles[] = {
     {
         .cmd = IOCTRL_NET_IFCONFIG,
         .func = _wlan_mgmt_dev_cmd_net_ifconfig,
+    },
+    {
+        .cmd = IOCTRL_NET_GETHOSTBYNAME,
+        .func = _wlan_mgmt_dev_cmd_net_gethostbyname,
     },
 };
 
