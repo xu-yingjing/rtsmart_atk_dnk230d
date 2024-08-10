@@ -74,7 +74,9 @@ static int mnt_mount_table(void)
 #endif
 
 int main(void) {
+#ifdef CONFIG_SDK_ENABLE_CANMV
   printf("CanMV Start\n");
+#endif //CONFIG_SDK_ENABLE_CANMV
 
 #ifdef RT_USING_SDIO
   while (mmcsd_wait_cd_changed(100) != MMCSD_HOST_PLUGED) {
@@ -101,7 +103,9 @@ int main(void) {
   rt_thread_delay(10);
 #endif //ENABLE_CHERRY_USB
 
+#ifdef CONFIG_SDK_ENABLE_CANMV
   msh_exec("/sdcard/micropython", 32);
+#endif //CONFIG_SDK_ENABLE_CANMV
 
   return 0;
 }
