@@ -978,11 +978,14 @@ lwip_recv_tcp(struct lwip_sock *sock, void *mem, size_t len, int flags)
         LWIP_DEBUGF(SOCKETS_DEBUG, ("lwip_recv_tcp: p == NULL, error is \"%s\"!\n",
                                     lwip_strerr(err)));
         sock_set_errno(sock, err_to_errno(err));
-        if (err == ERR_CLSD) {
-          return 0;
-        } else {
-          return -1;
-        }
+
+        return -1;
+
+        // if (err == ERR_CLSD) {
+        //   return 0;
+        // } else {
+        //   return -1;
+        // }
       }
       LWIP_ASSERT("p != NULL", p != NULL);
       sock->lastdata.pbuf = p;
