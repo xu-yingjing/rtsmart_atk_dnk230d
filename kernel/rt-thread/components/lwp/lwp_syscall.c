@@ -2775,6 +2775,13 @@ int sys_accept(int socket, struct musl_sockaddr *addr, socklen_t *addrlen)
             lwp_put_to_user(addrlen, &uaddrlen, sizeof (socklen_t));
         }
     }
+
+    // why?
+    if(0 > ret) {
+        int err = rt_get_errno();
+        ret = (0 > err) ? (err) : (-err);
+    }
+
     return ret;
 }
 
