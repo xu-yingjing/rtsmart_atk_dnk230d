@@ -69,7 +69,17 @@
 #endif /*GRND_RANDOM */
 
 #define SET_ERRNO(no) rt_set_errno(-(no))
-#define GET_ERRNO() ((rt_get_errno() > 0) ? (-rt_get_errno()) : rt_get_errno())
+
+// #define GET_ERRNO() ((rt_get_errno() > 0) ? (-rt_get_errno()) : rt_get_errno())
+
+static inline int GET_ERRNO() {
+  int err = rt_get_errno();
+  if (0 < err) {
+    err = -err;
+  }
+  return err;
+}
+
 struct musl_sockaddr
 {
     uint16_t sa_family;
