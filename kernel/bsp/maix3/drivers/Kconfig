@@ -69,4 +69,25 @@ menu "Drivers Configuration"
 
         endif
 
+    menuconfig RT_USING_I2C
+        bool "Enable I2C"
+
+        if RT_USING_I2C
+            config RT_USING_I2C0
+                bool "Enable I2C0"
+                default y
+            config RT_USING_I2C1
+                bool "Enable I2C1"
+                default y
+            config RT_USING_I2C2
+                bool "Enable I2C2"
+                default y
+            config RT_USING_I2C3
+                bool "Enable I2C3"
+                default y
+            config RT_USING_I2C4
+                bool "Enable I2C4"
+                default y
+        endif
+
 endmenu
