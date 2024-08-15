@@ -69,6 +69,32 @@ menu "Drivers Configuration"
 
         endif
 
+    menuconfig RT_USING_CYW43XX
+        bool "Enable CYW43XX WiFi Driver"
+
+        if RT_USING_CYW43XX
+            choice CYW43XX_SDIO_DEV
+                bool "CYW43XX Wifi Use SDIO Device"
+
+                config CYW43XX_SDIO_DEV0
+                    bool "Using SDIO0"
+                config CYW43XX_SDIO_DEV1
+                    bool "Using SDIO1"
+            endchoice
+
+            config CYW43XX_SDIO_DEV
+                int
+                default 0 if CYW43XX_SDIO_DEV0
+                default 1 if CYW43XX_SDIO_DEV1
+
+            config CYW43XX_THREAD_PRIORITY
+                int
+                default 10
+            config CYW43XX_THREAD_STACK_SIZE
+                int
+                default 4096
+        endif
+
     menuconfig RT_USING_I2C
         bool "Enable I2C"
 
