@@ -1172,6 +1172,20 @@ rt_err_t rt_wlan_connect_adv(struct rt_wlan_info *info, const char *password)
         {
             RT_WLAN_LOG_I("wifi Already Connected");
             MGNT_UNLOCK();
+
+            /* send event */
+            COMPLETE_LOCK();
+            for (int i = 0; i < sizeof(complete_tab) / sizeof(complete_tab[0]); i++)
+            {
+                if ((complete_tab[i] != RT_NULL))
+                {
+                    complete_tab[i]->event_flag |= 0x1 << RT_WLAN_DEV_EVT_CONNECT;
+                    rt_event_send(&complete_tab[i]->complete, 0x1 << RT_WLAN_DEV_EVT_CONNECT);
+                    RT_WLAN_LOG_D("&complete_tab[i]->complete:0x%08x", &complete_tab[i]->complete);
+                }
+            }
+            COMPLETE_UNLOCK();
+
             return RT_EOK;
         }
 
