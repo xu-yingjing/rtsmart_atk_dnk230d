@@ -8,7 +8,7 @@
  * 2020/12/12     bernard      The first version
  */
 
-INCLUDE "link_stacksize.lds"
+#include "rtconfig.h"
 
 OUTPUT_ARCH( "riscv" )
 
@@ -20,13 +20,13 @@ OUTPUT_ARCH( "riscv" )
 
 MEMORY
 {
-   SRAM : ORIGIN = 0x20000, LENGTH = 262015K
+    SRAM : ORIGIN = (CONFIG_MEM_RTSMART_BASE + 0x20000), LENGTH = (((CONFIG_MEM_RTSMART_SIZE - 0x20000) / 1024) - 1) * 1024
 }
 
 ENTRY(_start)
 SECTIONS
 {
-    . = 0x20000;    /*rt-smart link start address*/
+    . = (CONFIG_MEM_RTSMART_BASE + 0x20000);    /*rt-smart link start address*/
 
     /* __STACKSIZE__ = 4096; */
     __text_start = .;

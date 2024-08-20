@@ -18,8 +18,11 @@ extern unsigned int __bss_end;
 
 #define MEMORY_RESERVED     0x1000
 
-#define RAM_END 0xfffec00
-#define RT_HEAP_SIZE 0x2000000
+#define RTT_SYS_BASE        (CONFIG_MEM_RTSMART_BASE + 0x20000)
+#define RTT_SYS_SIZE        ((((CONFIG_MEM_RTSMART_SIZE - 0x20000) / 1024) - 1) * 1024)
+
+#define RAM_END             (RTT_SYS_BASE + RTT_SYS_SIZE - 4096)
+#define RT_HEAP_SIZE        (CONFIG_MEM_RTSMART_HEAP_SIZE)
 
 #define RT_HW_HEAP_BEGIN    ((void *)&__bss_end)
 #define RT_HW_HEAP_END ((void *)(((rt_size_t)RT_HW_HEAP_BEGIN) + RT_HEAP_SIZE ))

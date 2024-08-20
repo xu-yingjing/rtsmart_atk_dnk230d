@@ -30,12 +30,15 @@ rtconfig.ARCH='risc-v'
 # prepare building environment
 objs = PrepareBuilding(env, RTT_ROOT, has_libcpu = True)
 
-stack_size = 4096
+# stack_size = 4096
 
-stack_lds = open('link_stacksize.lds', 'w')
-if GetDepend('__STACKSIZE__'): stack_size = GetDepend('__STACKSIZE__')
-stack_lds.write('__STACKSIZE__ = %d;' % stack_size)
-stack_lds.close()
+# stack_lds = open('link_stacksize.lds', 'w')
+# if GetDepend('__STACKSIZE__'): stack_size = GetDepend('__STACKSIZE__')
+# stack_lds.write('__STACKSIZE__ = %d;' % stack_size)
+# stack_lds.close()
+
+from genld import *
+genld('link.lds.in', 'link.lds')
 
 # make a building
 DoBuilding(TARGET, objs)

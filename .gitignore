@@ -49,5 +49,6 @@ rtthread.bin
 rtthread.elf
 rtthread.map
 
+link.lds
 link_stacksize.lds
 kconfig-mconf
