@@ -961,6 +961,12 @@ RT_WEAK int lwp_load(const char *filename, struct rt_lwp *lwp, uint8_t *load_add
     int len;
     int fd = -1;
 
+#if defined (RT_OPTIMIZE_LWP_LOAD) && defined (RT_USING_DFS_TMPFS)
+    int fd_tmp = -1;
+    uint8_t *temp = NULL;
+    const char *tmp_file_name = "/tmp/load_temp";
+#endif
+
     /* check file name */
     RT_ASSERT(filename != RT_NULL);
     /* check lwp control block */
@@ -994,6 +1000,77 @@ RT_WEAK int lwp_load(const char *filename, struct rt_lwp *lwp, uint8_t *load_add
     }
 
     lseek(fd, 0, SEEK_SET);
+
+#if defined (RT_OPTIMIZE_LWP_LOAD) && defined (RT_USING_DFS_TMPFS)
+    fd_tmp = -1;
+    temp = NULL;
+
+    if(CONFIG_MEM_RTSMART_HEAP_SIZE < (len * 3)) {
+        goto _temp_failed;
+    }
+
+    fd_tmp = open(tmp_file_name, O_BINARY | O_CREAT | O_RDWR | O_TRUNC, 0);
+    if(0 > fd_tmp) {
+        // LOG_W("open temp file failed %s\n", tmp_file_name);
+        goto _temp_failed;
+    }
+
+    {
+        int file_total_len = len;
+        int file_read_len = 0;
+        int file_chunk_size = 0;
+        int _fd_tmp = -1;
+
+        temp = rt_malloc(64 * 1024);
+        if(NULL == temp) {
+            // LOG_W("malloc for temp file failed\n");
+            goto _temp_failed;
+        }
+
+        do {
+            file_chunk_size = 64 * 1024;
+
+            if((file_total_len - file_read_len) < (64 * 1024)) {
+                file_chunk_size = file_total_len - file_read_len;
+            }
+
+            size_t rcount = read(fd, temp, file_chunk_size);
+            size_t wcount = write(fd_tmp, temp, file_chunk_size);
+
+            if(rcount != wcount) {
+                // LOG_W("write to temp failed %d != %d @ 0x%x\n", rcount, wcount, file_read_len);
+                goto _temp_failed;
+            }
+
+            file_read_len += rcount;
+        } while(file_read_len < file_total_len);
+
+        file_total_len = lseek(fd_tmp, 0, SEEK_END);
+
+        if(file_total_len != len) {
+            // LOG_W("may be read file failed %d != %d\n", file_total_len, len);
+            goto _temp_failed;
+        }
+        lseek(fd_tmp, 0, SEEK_SET);
+
+        _fd_tmp = fd;
+        fd = fd_tmp;
+        fd_tmp = -1;
+
+        if(_fd_tmp) {
+            close(_fd_tmp);
+        }
+        LOG_I("LWP use fast load\n");
+    }
+_temp_failed:
+    if(temp) {
+        rt_free(temp);
+    }
+
+    if(fd_tmp >= 0) {
+        close(fd_tmp);
+    }
+#endif
 
     ret = load_elf(fd, len, lwp, ptr, aux);
     if ((ret != RT_EOK) && (ret != 1))

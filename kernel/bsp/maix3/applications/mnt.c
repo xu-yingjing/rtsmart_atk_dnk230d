@@ -16,6 +16,9 @@ const struct romfs_dirent _root_dirent[] = {
 #ifdef RT_USING_DFS_PROCFS
     {ROMFS_DIRENT_DIR, "proc",    RT_NULL, 0},
 #endif
+#ifdef RT_USING_DFS_TMPFS
+    {ROMFS_DIRENT_DIR, "tmp",     RT_NULL, 0},
+#endif
 };
 
 const struct romfs_dirent romfs_root =
@@ -36,6 +39,12 @@ int mnt_init(void) {
   if (dfs_mount(RT_NULL, "/dev/shm", "tmp", 0, 0) != 0) {
     rt_kprintf("Dir /dev/shm mount failed!\n");
   }
+
+#ifdef RT_USING_DFS_TMPFS
+  if (dfs_mount(RT_NULL, "/tmp", "tmp", 0, 0) != 0) {
+    rt_kprintf("Dir /tmp mount failed!\n");
+  }
+#endif
 
 #ifndef RT_FASTBOOT
   rt_kprintf("/dev/shm file system initialization done!\n");
