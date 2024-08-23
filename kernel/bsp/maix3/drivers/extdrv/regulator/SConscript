@@ -3,10 +3,13 @@
 from building import *
 
 cwd     = GetCurrentDir()
-src     = Glob('*.c') + Glob('*.S')
+src     = Glob('regulator.c')
 CPPPATH = [cwd]
 
-group = DefineGroup('REGULATOR', src, depend = ['RT_USING_REGULATOR'], CPPPATH = CPPPATH)
+if GetDepend(['RT_USING_REGULATOR_TPS6286X']):
+    src += Glob('tps6286x.c')
+
+group = DefineGroup('REGULATOR', src, depend = ['RT_USING_PM', 'RT_USING_REGULATOR'], CPPPATH = CPPPATH)
 
 objs = [group]
 

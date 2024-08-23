@@ -2,7 +2,7 @@ menu "Kernel Testcase"
 
 config UTEST_MEMHEAP_TC
     bool "memheap stability test"
-    default y
+    default n
     depends on RT_USING_MEMHEAP
 
 config UTEST_IRQ_TC

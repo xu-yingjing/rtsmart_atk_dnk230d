@@ -8,9 +8,15 @@ menu "Drivers Configuration"
         bool "Enable SPI Driver"
         default n
 
-    config RT_USING_REGULATOR
+    menuconfig RT_USING_REGULATOR
         bool "Enable regulator Driver"
-        default n
+        depends on MPP_ENABLE_PM
+
+        if RT_USING_REGULATOR
+            config RT_USING_REGULATOR_TPS6286X
+                bool "Use TPS6286X"
+                default n
+        endif
 
     menuconfig RT_USING_SDIO
         bool "Enable SDIO Driver"
@@ -101,19 +107,19 @@ menu "Drivers Configuration"
         if RT_USING_I2C
             config RT_USING_I2C0
                 bool "Enable I2C0"
-                default y
+                default n
             config RT_USING_I2C1
                 bool "Enable I2C1"
-                default y
+                default n
             config RT_USING_I2C2
                 bool "Enable I2C2"
-                default y
+                default n
             config RT_USING_I2C3
                 bool "Enable I2C3"
-                default y
+                default n
             config RT_USING_I2C4
                 bool "Enable I2C4"
-                default y
+                default n
         endif
 
     menuconfig RT_USING_WS2812
