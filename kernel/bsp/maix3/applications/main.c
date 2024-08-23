@@ -6,6 +6,7 @@
  * Change Logs:
  * Date           Author       Notes
  */
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -45,10 +46,13 @@
 static const struct dfs_mount_tbl custom_mount_table[] = {
   {SD_DEV_PART("sd", SDCARD_ON_SDIO_DEV, "0"), "/bin", "elm", 0, 0},
   {SD_DEV_PART("sd", SDCARD_ON_SDIO_DEV, "1"), "/sdcard", "elm", 0, 0},
+  {SD_DEV_PART("sd", SDCARD_ON_SDIO_DEV, "2"), "/data", "elm", 0, 0},
   {0}
 };
 
-static int mnt_mount_table(void)
+static bool s_fs_mount_data_succ = false;
+
+static void mnt_mount_table(void)
 {
     int index = 0;
 
@@ -64,12 +68,22 @@ static int mnt_mount_table(void)
         {
             rt_kprintf("mount fs[%s] on %s failed, error %d.\n", custom_mount_table[index].filesystemtype,
                        custom_mount_table[index].path, errno);
-            return -RT_ERROR;
+
+          if(0x00 == strcmp("/data", custom_mount_table[index].path)) {
+              s_fs_mount_data_succ = false;
+
+              if((-19) == errno) {
+                rt_kprintf("Please format the partition[2] to FAT32.\nRefer to https://support.microsoft.com/zh-cn/windows/%E5%88%9B%E5%BB%BA%E5%92%8C%E6%A0%BC%E5%BC%8F%E5%8C%96%E7%A1%AC%E7%9B%98%E5%88%86%E5%8C%BA-bbb8e185-1bda-ecd1-3465-c9728f7d7d2e\n");
+              }
+            }
+        } else {
+          if(0x00 == strcmp("/data", custom_mount_table[index].path)) {
+            s_fs_mount_data_succ = true;
+          }
         }
 
         index ++;
     }
-    return 0;
 }
 #endif
 
@@ -91,8 +105,8 @@ int main(void) {
 #ifdef ENABLE_CHERRY_USB_DEVICE
   usb_base = (void *)rt_ioremap((void *)usb_dev_addr[CHERRY_USB_DEVICE_USING_DEV], 0x10000);
 
-  extern void cdc_acm_mtp_init(void *usb_base);
-  cdc_acm_mtp_init(usb_base);
+  extern void cdc_acm_mtp_init(void *usb_base, bool fs_data_mount_succ);
+  cdc_acm_mtp_init(usb_base, s_fs_mount_data_succ);
 #endif // ENABLE_CHERRY_USB_DEVICE
 
 #ifdef ENABLE_CHERRY_USB_HOST

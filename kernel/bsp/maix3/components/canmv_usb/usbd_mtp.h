@@ -15,7 +15,8 @@ extern "C" {
 struct usbd_interface *usbd_mtp_init_intf(struct usbd_interface *intf,
                                           const uint8_t out_ep,
                                           const uint8_t in_ep,
-                                          const uint8_t int_ep);
+                                          const uint8_t int_ep,
+                                          bool fs_data_mount_succ);
 
 #ifdef __cplusplus
 }

@@ -7,6 +7,7 @@
 #include "usbd_core.h"
 #include "usbd_cdc.h"
 #include "usbd_mtp.h"
+#include <sys/types.h>
 
 /*!< endpoint address */
 #define CDC_IN_EP  0x81
@@ -238,7 +239,7 @@ static void cdc_device_init(void)
     rt_sem_init(&cdc_write_sem, "cdc_write", 1, RT_IPC_FLAG_FIFO);
 }
 
-void cdc_acm_mtp_init(void *usb_base)
+void cdc_acm_mtp_init(void *usb_base, bool fs_data_mount_succ)
 {
     cdc_device_init();
 
@@ -251,7 +252,7 @@ void cdc_acm_mtp_init(void *usb_base)
     usbd_add_endpoint(CDC_DEV_BUSID, &cdc_in_ep);
 
 #if defined(CHERRY_USB_DEVICE_ENABLE_CLASS_MTP)
-    usbd_mtp_init_intf(&intf2, MTP_OUT_EP, MTP_IN_EP, MTP_INT_EP);
+    usbd_mtp_init_intf(&intf2, MTP_OUT_EP, MTP_IN_EP, MTP_INT_EP, fs_data_mount_succ);
     usbd_add_interface(CDC_DEV_BUSID, &intf2);
 #endif
 

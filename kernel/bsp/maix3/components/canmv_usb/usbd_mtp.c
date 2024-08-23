@@ -207,13 +207,17 @@ init_error:
 struct usbd_interface *usbd_mtp_init_intf(struct usbd_interface *intf,
                                           const uint8_t out_ep,
                                           const uint8_t in_ep,
-                                          const uint8_t int_ep)
+                                          const uint8_t int_ep,
+                                          bool fs_data_mount_succ)
 {
     mtp_context = mtp_init_responder();
     mtp_load_config_file(mtp_context, "/sdcard/conf/mtp.conf");
     init_usb_mtp_buffer(mtp_context);
     mtp_set_usb_handle(mtp_context, NULL, MTP_BULK_EP_MPS);
     mtp_add_storage(mtp_context, "/sdcard", "sdcard", 0, 0, UMTP_STORAGE_READWRITE);
+    if(fs_data_mount_succ) {
+        mtp_add_storage(mtp_context, "/data", "data", 0, 0, UMTP_STORAGE_READWRITE);
+    }
     mtp_event = rt_event_create("mtp", RT_IPC_FLAG_FIFO);
     mtp_tid = rt_thread_create("mtp", mtp_thread, mtp_context, CONFIG_USBDEV_MTP_STACKSIZE, CONFIG_USBDEV_MTP_PRIO, 10);
 	rt_thread_startup(mtp_tid);
