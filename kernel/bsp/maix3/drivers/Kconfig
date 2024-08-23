@@ -122,6 +122,22 @@ menu "Drivers Configuration"
                 default n
         endif
 
+    if RT_USING_TOUCH
+        menuconfig RT_USING_TOUCH_FT5316
+            bool "Enable Touch FT5316"
+            default n
+
+            if RT_USING_TOUCH_FT5316
+                config TOUCH_FT5316_I2C_DEV
+                    string "I2C Device name"
+                    default "i2c3"
+
+                config TOUCH_FT5316_I2C_ADDR
+                    hex
+                    default 0x38
+            endif
+    endif
+
     menuconfig RT_USING_WS2812
         bool "Enable WS2812"
 

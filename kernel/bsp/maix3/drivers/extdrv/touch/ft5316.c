@@ -135,8 +135,8 @@ static struct rt_touch_ops touch_ops = {
 };
 
 static struct ft5316_dev ft5316_dev0 = {
-    .i2c_name = FT5316_I2C_DEV,
-    .i2c_addr = FT5316_I2C_ADDR,
+    .i2c_name = TOUCH_FT5316_I2C_DEV,
+    .i2c_addr = TOUCH_FT5316_I2C_ADDR,
 };
 
 static int ft5316_register(struct rt_touch_config *cfg)
