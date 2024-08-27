@@ -221,8 +221,8 @@ menu "Drivers Configuration"
 
         menuconfig RT_USING_REGULATOR
             bool "Enable regulator Driver"
-            default n
-            depends on MPP_ENABLE_PM
+            depends on RT_USING_PM
+            default y
 
             if RT_USING_REGULATOR
                 config RT_USING_REGULATOR_TPS6286X
