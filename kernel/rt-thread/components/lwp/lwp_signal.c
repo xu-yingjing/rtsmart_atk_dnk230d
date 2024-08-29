@@ -119,11 +119,8 @@ rt_inline int next_signal(lwp_sigset_t *pending, lwp_sigset_t *mask)
 rt_inline int lwp_thread_signal_check(rt_thread_t thread, lwp_sigset_t *set)
 {
     lwp_sigset_t valid_signal;
-    struct rt_lwp *lwp = (struct rt_lwp*)thread->lwp;
 
-    valid_signal.sig[0] = lwp ? lwp->signal.sig[0] : 0;
-    valid_signal.sig[0] = (valid_signal.sig[0] | thread->signal.sig[0]) &
-        (~thread->signal_mask.sig[0]);
+    valid_signal.sig[0] = thread->signal.sig[0] & ~thread->signal_mask.sig[0];
 
     if (set)
         set->sig[0] = valid_signal.sig[0];
@@ -190,21 +187,14 @@ int lwp_signal_backup(void *user_sp, void *user_pc, void* user_flag)
     signal = __builtin_ffsll(set.sig[0]);
     if (signal)
     {
-        thread->user_ctx.sp = user_sp;
-        thread->user_ctx.pc = user_pc;
-        thread->user_ctx.flag = user_flag;
+        thread->user_ctx[thread->signal_in_process].sp = user_sp;
+        thread->user_ctx[thread->signal_in_process].pc = user_pc;
+        thread->user_ctx[thread->signal_in_process].flag = user_flag;
 
-        thread->signal_mask_bak[thread->signal_in_process++] = thread->signal_mask;
+        thread->signal_mask_bak[thread->signal_in_process] = thread->signal_mask;
+        thread->signal_in_process++;
         lwp_sigaddset(&thread->signal_mask, signal);
-        if (lwp_sigismember(&thread->signal, signal))
-        {
-            lwp_sigdelset(&thread->signal, signal);
-        }
-        else
-        {
-            lwp = (struct rt_lwp*)thread->lwp;
-            lwp_sigdelset(&lwp->signal, signal);
-        }
+        lwp_sigdelset(&thread->signal, signal);
     }
 
     rt_hw_interrupt_enable(level);
@@ -221,8 +211,9 @@ struct rt_user_context *lwp_signal_restore(void)
     thread = rt_thread_self();
     if (thread->signal_in_process)
     {
-        ctx = &thread->user_ctx;
-        thread->signal_mask = thread->signal_mask_bak[--thread->signal_in_process];
+        thread->signal_in_process--;
+        ctx = &thread->user_ctx[thread->signal_in_process];
+        thread->signal_mask = thread->signal_mask_bak[thread->signal_in_process];
     }
     rt_hw_interrupt_enable(level);
     return ctx;
@@ -543,12 +534,12 @@ int lwp_kill(pid_t pid, int sig)
     }
     if (sig)
     {
-        lwp_sigaddset(&lwp->signal, sig);
         for (list = lwp->t_grp.prev; list != &lwp->t_grp; list = list->prev)
         {
             thread = rt_list_entry(list, struct rt_thread, sibling);
             if (!lwp_sigismember(&thread->signal_mask, sig)) /* if signal masked */
             {
+                lwp_sigaddset(&thread->signal, sig);
                 _do_signal_wakeup(thread, sig);
                 break;
             }

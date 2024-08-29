@@ -754,7 +754,7 @@ struct rt_thread
 #ifndef ARCH_MM_MMU
     lwp_sighandler_t signal_handler[32];
 #endif
-    struct rt_user_context user_ctx;
+    struct rt_user_context user_ctx[_LWP_NSIG];
 
     struct rt_wakeup wakeup;                            /**< wakeup data */
     int exit_request;
