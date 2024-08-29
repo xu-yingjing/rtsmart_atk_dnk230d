@@ -1,11 +1,16 @@
 from building import *
 
-cwd     = GetCurrentDir()
-src	= Glob('*.c')
+cwd = GetCurrentDir()
 CPPPATH = [cwd]
 
-if not GetDepend(['RT_WLAN_MANAGE_ENABLE']):
-    SrcRemove(src, ['wlan_mgmt_dev.c'])
+src	= Glob('main.c')
+src	+= Glob('mnt.c')
+
+if GetDepend(['RT_USING_SDIO']):
+    src	+= Glob('config.c')
+
+if GetDepend(['RT_WLAN_MANAGE_ENABLE']):
+    src	+= Glob('wlan_mgmt_dev.c')
 
 group = DefineGroup('Applications', src, depend = [''], CPPPATH = CPPPATH)
 

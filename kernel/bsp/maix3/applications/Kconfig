@@ -1,3 +1,17 @@
 menu "Applications Configuration"
 
+    menuconfig RT_AUTO_RESIZE_PARTITION
+        bool "Enable auto resize partition"
+        default y
+        help
+            Support auto resize the last partition, use the disk remain space
+            Now just support MMC device and MBR partition table.
+
+        if RT_AUTO_RESIZE_PARTITION
+            config RT_AUTO_RESIZE_PARTITION_NR
+                int "Resize partition id"
+                default 2
+
+        endif
+
 endmenu

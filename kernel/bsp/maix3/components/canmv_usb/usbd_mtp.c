@@ -211,7 +211,7 @@ struct usbd_interface *usbd_mtp_init_intf(struct usbd_interface *intf,
                                           bool fs_data_mount_succ)
 {
     mtp_context = mtp_init_responder();
-    mtp_load_config_file(mtp_context, "/sdcard/conf/mtp.conf");
+    mtp_load_config_file(mtp_context, "/sdcard/mtp.conf");
     init_usb_mtp_buffer(mtp_context);
     mtp_set_usb_handle(mtp_context, NULL, MTP_BULK_EP_MPS);
     mtp_add_storage(mtp_context, "/sdcard", "sdcard", 0, 0, UMTP_STORAGE_READWRITE);
