@@ -6,12 +6,13 @@
  * Change Logs:
  * Date           Author       Notes
  */
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <rtthread.h>
 #include <rthw.h>
+#include <rtthread.h>
 
 #include <dfs_fs.h>
 #include <ioremap.h>
@@ -19,6 +20,7 @@
 #include <msh.h>
 
 #include "./config.h"
+#include "dfs_posix.h"
 
 #ifdef ENABLE_CHERRY_USB
 
@@ -57,7 +59,9 @@ static bool s_fs_mount_data_succ = false;
 static void mnt_mount_table(void)
 {
     int ret;
+    int err = 0;
     int index = 0;
+    int fd = -1;
     int mkfs_for_data_partition = 0;
 
     while (1)
@@ -70,24 +74,30 @@ static void mnt_mount_table(void)
                       custom_mount_table[index].rwflag,
                       custom_mount_table[index].data)))
         {
+            err = errno;
             rt_kprintf("mount fs[%s] on %s failed(%d), error %d.\n", custom_mount_table[index].filesystemtype,
-                       custom_mount_table[index].path, ret, errno);
+                       custom_mount_table[index].path, ret, err);
 
           if(0x00 == strcmp("/data", custom_mount_table[index].path)) {
               s_fs_mount_data_succ = false;
 
 #if defined (CONFIG_RT_AUTO_RESIZE_PARTITION)
-              if(0x00 == mkfs_for_data_partition) {
-                rt_kprintf("Start format partition[2] to fat, it will took a long tims.\n");
+              if(0 <= (fd = open("/bin/auto_mkfs_data", O_RDONLY))) {
+                close(fd);
+                unlink("/bin/auto_mkfs_data");
+                fd = 0x1234;
+              }
 
-                dfs_mkfs("elm", custom_mount_table[index].device_name);
-
-                index--;
+              if((0x1234 == fd) && (0x00 == mkfs_for_data_partition)) {
                 mkfs_for_data_partition = 1;
+
+                rt_kprintf("Start format partition[2] to fat, it will took a long tims.\n");
+                dfs_mkfs("elm", custom_mount_table[index].device_name);
+                index--;
               }
 #endif
 
-              if((-19) == errno) {
+              if((-19) == err) {
                 rt_kprintf("Please format the partition[2] to FAT32.\nRefer to https://support.microsoft.com/zh-cn/windows/%E5%88%9B%E5%BB%BA%E5%92%8C%E6%A0%BC%E5%BC%8F%E5%8C%96%E7%A1%AC%E7%9B%98%E5%88%86%E5%8C%BA-bbb8e185-1bda-ecd1-3465-c9728f7d7d2e\n");
               }
             }

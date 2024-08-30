@@ -223,6 +223,8 @@ int inotify_handler_filechange(int type, char *path)
 	msg.type = type;
 	if (path)
 		msg.path = rt_strdup(path);
-	rt_mq_send_wait(mtp_inty_mq, &msg, sizeof(file_chg_msg_t), RT_WAITING_FOREVER);
+	if (mtp_inty_mq) {
+		rt_mq_send_wait(mtp_inty_mq, &msg, sizeof(file_chg_msg_t), RT_WAITING_FOREVER);
+	}
 	return 0;
 }
