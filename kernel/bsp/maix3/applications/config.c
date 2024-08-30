@@ -15,7 +15,7 @@ struct config_handler {
   void (*handler)(char *value);
 };
 
-#if defined(RT_AUTO_RESIZE_PARTITION) && defined(RT_USING_SDIO)
+#if defined(CONFIG_RT_AUTO_RESIZE_PARTITION) && defined(RT_USING_SDIO)
 #define DPT_ADDRESS 0x1be /* device partition offset in Boot Sector */
 #define DPT_ITEM_SIZE 16  /* partition item size */
 
@@ -33,11 +33,11 @@ struct partition_entry {
 _Static_assert(sizeof(struct partition_entry) == DPT_ITEM_SIZE,
                "Error partition entry size error");
 
-_Static_assert(4 > RT_AUTO_RESIZE_PARTITION_NR, "MBR max partition is 4");
+_Static_assert(4 > CONFIG_RT_AUTO_RESIZE_PARTITION_NR, "MBR max partition is 4");
 
 static void execute_auto_resize(char *value) {
   int ret = 0;
-  int enable = 0;
+  char enable = 0;
 
   char dev_name[16];
   uint8_t *buffer = NULL;
@@ -47,12 +47,12 @@ static void execute_auto_resize(char *value) {
   struct rt_device_blk_geometry dev_sd_geometry;
   struct partition_entry part_entry;
 
-  if (0x01 != sscanf(value, "%d", &enable)) {
+  if (0x01 != sscanf(value, "%c", &enable)) {
     rt_kprintf("%s parse value failed.\n", __func__);
     return;
   }
 
-  if (0x00 == enable) {
+  if ('y' != enable) {
     return;
   }
 
@@ -78,10 +78,10 @@ static void execute_auto_resize(char *value) {
   }
 
   if (RT_EOK != dfs_filesystem_get_partition(&part, buffer,
-                                             RT_AUTO_RESIZE_PARTITION_NR)) {
+                                             CONFIG_RT_AUTO_RESIZE_PARTITION_NR)) {
 
     if (RT_EOK != dfs_filesystem_get_partition(
-                      &last_part, buffer, RT_AUTO_RESIZE_PARTITION_NR - 1)) {
+                      &last_part, buffer, CONFIG_RT_AUTO_RESIZE_PARTITION_NR - 1)) {
       rt_kprintf("%s get last partition info failed.\n", __func__);
       goto _exit;
     }
@@ -104,7 +104,7 @@ static void execute_auto_resize(char *value) {
     part_entry.lba_len = dev_sd_geometry.sector_count - part_entry.lba_sector;
 
     rt_memcpy(buffer + DPT_ADDRESS +
-                  RT_AUTO_RESIZE_PARTITION_NR * DPT_ITEM_SIZE,
+                  CONFIG_RT_AUTO_RESIZE_PARTITION_NR * DPT_ITEM_SIZE,
               &part_entry, sizeof(part_entry));
 
     if (0x01 == rt_device_write(dev_sd, 0, buffer, 1)) {
