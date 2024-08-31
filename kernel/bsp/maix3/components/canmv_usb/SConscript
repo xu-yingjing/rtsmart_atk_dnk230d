@@ -3,10 +3,21 @@
 from building import *
 
 cwd     = GetCurrentDir()
-src     = Glob('*.c')
+src     = []
+
 CPPPATH = [cwd]
 
-group = DefineGroup('CanmVUSB', src, depend = ['ENABLE_CANMV_USB_DEV'], CPPPATH = CPPPATH)
+if GetDepend(['ENABLE_CANMV_USB_DEV']):
+    src += Glob('canmv_usbd.c')
+if GetDepend(['CHERRY_USB_DEVICE_ENABLE_CLASS_CDC_ACM']):
+    src += Glob('usbd_cdc.c')
+if GetDepend(['CHERRY_USB_DEVICE_ENABLE_CLASS_MTP']):
+    src += Glob('usbd_mtp.c')
+
+if GetDepend(['CHERRY_USB_HOST_ENABLE_CLASS_NET_RTL8152']):
+    src += Glob('usbh_net_rtl8152.c')
+
+group = DefineGroup('CanmVUSB', src, depend = [], CPPPATH = CPPPATH)
 
 objs = [group]
 

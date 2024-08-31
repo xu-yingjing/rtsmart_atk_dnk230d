@@ -855,3 +855,4 @@ int lsusb(int argc, char **argv)
 
     return 0;
 }
+MSH_CMD_EXPORT(lsusb, list usb under usb host)

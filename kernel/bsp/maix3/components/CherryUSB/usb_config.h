@@ -40,7 +40,6 @@
 /* ================= USB Device Stack Configuration ================ */
 
 #define CONFIG_USBDEV_MAX_BUS 1 // for now, bus num must be 1 except hpm ip
-#define CDC_DEV_BUSID 0
 
 #define CONFIG_USB_DWC2_RXALL_FIFO_SIZE (2048 / 4)
 #define CONFIG_USB_DWC2_TX0_FIFO_SIZE (256 / 4)
@@ -134,7 +133,7 @@
 #define CONFIG_USBHOST_DEV_NAMELEN 16
 
 #ifndef CONFIG_USBHOST_PSC_PRIO
-#define CONFIG_USBHOST_PSC_PRIO 0
+#define CONFIG_USBHOST_PSC_PRIO 14
 #endif
 #ifndef CONFIG_USBHOST_PSC_STACKSIZE
 #define CONFIG_USBHOST_PSC_STACKSIZE 4096

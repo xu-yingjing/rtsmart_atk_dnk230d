@@ -34,7 +34,6 @@ static void sysctl_reset_hw_done(volatile uint32_t *reset_reg, uint8_t reset_bit
 #ifdef ENABLE_CHERRY_USB_HOST
 static void usb_hc_interrupt_cb(int irq, void *arg_pv)
 {
-    // rt_kprintf("\nusb_hc_interrupt_cb\n");
     extern void USBH_IRQHandler(uint8_t busid);
     USBH_IRQHandler(0);
 }
@@ -43,7 +42,7 @@ uint32_t usbh_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
     return 0;
 }
-#ifdef CHERRY_USB_HOST_USING_DEV0
+#if defined (CHERRY_USB_HOST_USING_DEV0)
 void usb_hc_low_level_init(void)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 0, 28);
@@ -63,7 +62,7 @@ void usb_hc_low_level_deinit(void)
 {
     rt_hw_interrupt_mask(173);
 }
-#elif CHERRY_USB_HOST_USING_DEV1
+#elif defined (CHERRY_USB_HOST_USING_DEV1)
 void usb_hc_low_level_init(void)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 1, 29);
@@ -90,7 +89,7 @@ void usb_hc_low_level_deinit(void)
 #endif // ENABLE_CHERRY_USB_HOST
 
 // USB Device
-#ifdef ENABLE_CHERRY_USB_DEVICE
+#if defined (ENABLE_CHERRY_USB_DEVICE) 
 static void usb_dc_interrupt_cb(int irq, void *arg_pv)
 {
     extern void USBD_IRQHandler(uint8_t busid);
@@ -100,7 +99,7 @@ uint32_t usbd_get_dwc2_gccfg_conf(uint32_t reg_base)
 {
     return 0;
 }
-#ifdef CHERRY_USB_DEVICE_USING_DEV0
+#if defined (CHERRY_USB_DEVICE_USING_DEV0)
 void usb_dc_low_level_init(void)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 0, 28);
@@ -116,7 +115,7 @@ void usb_dc_low_level_deinit(void)
 {
     rt_hw_interrupt_mask(173);
 }
-#elif CHERRY_USB_DEVICE_USING_DEV1
+#elif defined(CHERRY_USB_DEVICE_USING_DEV1)
 void usb_dc_low_level_init(void)
 {
     sysctl_reset_hw_done((volatile uint32_t *)0x9110103c, 1, 29);

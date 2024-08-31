@@ -3,19 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "usbd_core.h"
-#include "usbd_mtp.h"
+#include "canmv_usb.h"
+
 #include "mtp.h"
 #include "mtp_helpers.h"
-#include "rtthread.h"
+
 #include "usb_osal.h"
 
 /* Max USB packet size */
-#ifndef CONFIG_USB_HS
-#define MTP_BULK_EP_MPS 64
-#else
-#define MTP_BULK_EP_MPS 512
-#endif
+#define MTP_BULK_EP_MPS USB_DEVICE_MAX_MPS
 
 #define MTP_OUT_EP_IDX 0
 #define MTP_IN_EP_IDX  1
@@ -39,7 +35,7 @@ int read_usb(void * ctx, unsigned char * buffer, int maxsize)
     rt_uint32_t re;
 
     read_size = 0;
-    usbd_ep_start_read(CDC_DEV_BUSID, mtp_ep_data[MTP_OUT_EP_IDX].ep_addr, buffer, maxsize);
+    usbd_ep_start_read(USB_DEVICE_BUS_ID, mtp_ep_data[MTP_OUT_EP_IDX].ep_addr, buffer, maxsize);
     rt_event_recv(mtp_event, EV_BULK_READ_FINISH | EV_DISCONNECT, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, &re);
     if (re & EV_DISCONNECT)
         return -1;
@@ -53,10 +49,10 @@ int write_usb(void * ctx, int channel, unsigned char * buffer, int size)
 
     if (channel == MTP_IN_EP_IDX) {
         write_size = 0;
-        usbd_ep_start_write(CDC_DEV_BUSID, mtp_ep_data[channel].ep_addr, buffer, size);
+        usbd_ep_start_write(USB_DEVICE_BUS_ID, mtp_ep_data[channel].ep_addr, buffer, size);
         rt_event_recv(mtp_event, EV_BULK_WRITE_FINISH | EV_DISCONNECT, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, &re);
     } else {
-        usbd_ep_start_write(CDC_DEV_BUSID, mtp_ep_data[channel].ep_addr, buffer, size);
+        usbd_ep_start_write(USB_DEVICE_BUS_ID, mtp_ep_data[channel].ep_addr, buffer, size);
         rt_event_recv(mtp_event, EV_INT_WRITE_FINISH | EV_DISCONNECT, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, &re);
     }
     if (re & EV_DISCONNECT)
@@ -204,39 +200,42 @@ init_error:
     return -1;
 }
 
-struct usbd_interface *usbd_mtp_init_intf(struct usbd_interface *intf,
-                                          const uint8_t out_ep,
-                                          const uint8_t in_ep,
-                                          const uint8_t int_ep,
-                                          bool fs_data_mount_succ)
+static void mtp_device_init(void)
 {
     mtp_context = mtp_init_responder();
-    mtp_load_config_file(mtp_context, "/sdcard/mtp.conf");
+    mtp_load_config_file(mtp_context, "/bin/mtp.conf");
     init_usb_mtp_buffer(mtp_context);
     mtp_set_usb_handle(mtp_context, NULL, MTP_BULK_EP_MPS);
     mtp_add_storage(mtp_context, "/sdcard", "sdcard", 0, 0, UMTP_STORAGE_READWRITE);
-    if(fs_data_mount_succ) {
+    if(g_fs_mount_data_succ) {
         mtp_add_storage(mtp_context, "/data", "data", 0, 0, UMTP_STORAGE_READWRITE);
     }
     mtp_event = rt_event_create("mtp", RT_IPC_FLAG_FIFO);
     mtp_tid = rt_thread_create("mtp", mtp_thread, mtp_context, CONFIG_USBDEV_MTP_STACKSIZE, CONFIG_USBDEV_MTP_PRIO, 10);
 	rt_thread_startup(mtp_tid);
+}
 
-    intf->class_interface_handler = mtp_class_interface_request_handler;
-    intf->class_endpoint_handler = NULL;
-    intf->vendor_handler = NULL;
-    intf->notify_handler = mtp_notify_handler;
+static struct usbd_interface usbd_mtp_intf;
 
-    mtp_ep_data[MTP_OUT_EP_IDX].ep_addr = out_ep;
+void canmv_usb_device_mtp_init(void)
+{
+    usbd_mtp_intf.class_interface_handler = mtp_class_interface_request_handler;
+    usbd_mtp_intf.class_endpoint_handler = NULL;
+    usbd_mtp_intf.vendor_handler = NULL;
+    usbd_mtp_intf.notify_handler = mtp_notify_handler;
+
+    mtp_ep_data[MTP_OUT_EP_IDX].ep_addr = MTP_OUT_EP;
     mtp_ep_data[MTP_OUT_EP_IDX].ep_cb = usbd_mtp_bulk_out;
-    mtp_ep_data[MTP_IN_EP_IDX].ep_addr = in_ep;
+    mtp_ep_data[MTP_IN_EP_IDX].ep_addr = MTP_IN_EP;
     mtp_ep_data[MTP_IN_EP_IDX].ep_cb = usbd_mtp_bulk_in;
-    mtp_ep_data[MTP_INT_EP_IDX].ep_addr = int_ep;
+    mtp_ep_data[MTP_INT_EP_IDX].ep_addr = MTP_INT_EP;
     mtp_ep_data[MTP_INT_EP_IDX].ep_cb = usbd_mtp_int_in;
 
-    usbd_add_endpoint(CDC_DEV_BUSID, &mtp_ep_data[MTP_OUT_EP_IDX]);
-    usbd_add_endpoint(CDC_DEV_BUSID, &mtp_ep_data[MTP_IN_EP_IDX]);
-    usbd_add_endpoint(CDC_DEV_BUSID, &mtp_ep_data[MTP_INT_EP_IDX]);
+    usbd_add_interface(USB_DEVICE_BUS_ID, &usbd_mtp_intf);
 
-    return intf;
+    usbd_add_endpoint(USB_DEVICE_BUS_ID, &mtp_ep_data[MTP_OUT_EP_IDX]);
+    usbd_add_endpoint(USB_DEVICE_BUS_ID, &mtp_ep_data[MTP_IN_EP_IDX]);
+    usbd_add_endpoint(USB_DEVICE_BUS_ID, &mtp_ep_data[MTP_INT_EP_IDX]);
+
+    mtp_device_init();
 }

@@ -24,6 +24,8 @@
 
 #ifdef ENABLE_CHERRY_USB
 
+#include "canmv_usb.h"
+
 #ifdef ENABLE_CHERRY_USB_DEVICE
 #include "usbd_core.h"
 #endif // ENABLE_CHERRY_USB_DEVICE
@@ -54,8 +56,6 @@ static const struct dfs_mount_tbl custom_mount_table[] = {
   {0}
 };
 
-static bool s_fs_mount_data_succ = false;
-
 static void mnt_mount_table(void)
 {
     int ret;
@@ -79,7 +79,7 @@ static void mnt_mount_table(void)
                        custom_mount_table[index].path, ret, err);
 
           if(0x00 == strcmp("/data", custom_mount_table[index].path)) {
-              s_fs_mount_data_succ = false;
+              g_fs_mount_data_succ = false;
 
 #if defined (CONFIG_RT_AUTO_RESIZE_PARTITION)
               if(0 <= (fd = open("/bin/auto_mkfs_data", O_RDONLY))) {
@@ -91,8 +91,10 @@ static void mnt_mount_table(void)
               if((0x1234 == fd) && (0x00 == mkfs_for_data_partition)) {
                 mkfs_for_data_partition = 1;
 
-                rt_kprintf("Start format partition[2] to fat, it will took a long tims.\n");
+                rt_kprintf("\033[31mStart format partition[2] to fat, it will took a long time, DO NOT POWEROFF THE BOARD\033[0m\n");
                 dfs_mkfs("elm", custom_mount_table[index].device_name);
+                rt_kprintf("\n\n\033[32mformat done.\033[0m\n");
+
                 index--;
               }
 #endif
@@ -103,14 +105,14 @@ static void mnt_mount_table(void)
             }
         } else {
           if(0x00 == strcmp("/data", custom_mount_table[index].path)) {
-            s_fs_mount_data_succ = true;
+            g_fs_mount_data_succ = true;
           }
         }
 
         index ++;
     }
 }
-#endif
+#endif // RT_USING_SDIO
 
 int main(void) {
 #ifdef CONFIG_SDK_ENABLE_CANMV
@@ -129,17 +131,18 @@ int main(void) {
   void *usb_base;
   const void *usb_dev_addr[2] = {(void *)0x91500000UL, (void *)0x91540000UL};
 
-#ifdef ENABLE_CHERRY_USB_DEVICE
-  usb_base = (void *)rt_ioremap((void *)usb_dev_addr[CHERRY_USB_DEVICE_USING_DEV], 0x10000);
-
-  extern void cdc_acm_mtp_init(void *usb_base, bool fs_data_mount_succ);
-  cdc_acm_mtp_init(usb_base, s_fs_mount_data_succ);
-#endif // ENABLE_CHERRY_USB_DEVICE
-
-#ifdef ENABLE_CHERRY_USB_HOST
+  /* Strange BUG, ​​USB Host must be initialized first */
+#if defined (ENABLE_CHERRY_USB_HOST) && defined (ENABLE_CANMV_USB_HOST)
   usb_base = (void *)rt_ioremap((void *)usb_dev_addr[CHERRY_USB_HOST_USING_DEV], 0x10000);
+
   usbh_initialize(0, (uint32_t)usb_base);
 #endif // ENABLE_CHERRY_USB_HOST
+
+#if defined (ENABLE_CHERRY_USB_DEVICE) && defined (ENABLE_CANMV_USB_DEV)
+  usb_base = (void *)rt_ioremap((void *)usb_dev_addr[CHERRY_USB_DEVICE_USING_DEV], 0x10000);
+
+  canmv_usb_device_init(usb_base);
+#endif // ENABLE_CHERRY_USB_DEVICE
 
   rt_thread_delay(10);
 #endif //ENABLE_CHERRY_USB
