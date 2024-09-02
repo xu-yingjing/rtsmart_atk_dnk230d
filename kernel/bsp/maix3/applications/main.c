@@ -32,6 +32,7 @@
 
 #ifdef ENABLE_CHERRY_USB_HOST
 #include "usbh_core.h"
+#include "drv_gpio.h"
 #endif // ENABLE_CHERRY_USB_HOST
 
 #if defined(ENABLE_CHERRY_USB_DEVICE) && defined (ENABLE_CHERRY_USB_HOST)
@@ -142,6 +143,15 @@ int main(void) {
   usb_base = (void *)rt_ioremap((void *)usb_dev_addr[CHERRY_USB_DEVICE_USING_DEV], 0x10000);
 
   canmv_usb_device_init(usb_base);
+
+#ifdef CANMV_USB_PWR_PIN
+  int usb_host_pin = CANMV_USB_PWR_PIN;
+  if(0 <= usb_host_pin) {
+    kd_pin_mode(usb_host_pin, GPIO_DM_OUTPUT);
+    kd_pin_write(usb_host_pin, CANMV_USB_PWR_PIN_VALID_VAL);
+  }
+#endif
+
 #endif // ENABLE_CHERRY_USB_DEVICE
 
   rt_thread_delay(10);

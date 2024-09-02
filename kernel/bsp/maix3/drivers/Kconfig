@@ -185,6 +185,18 @@ menu "Drivers Configuration"
                     config RT_USING_UART_CANAAN_4
                         bool "Enable Uart Canaan device 4"
                         default n
+
+                    config CANAAN_UART_BUFFER_SIZE
+                        int "Uart Canaan Buffer size in Bytes"
+                        default 131072
+
+                    config POLLIN_SIZE
+                        int
+                        default CANAAN_UART_BUFFER_SIZE/2
+
+                    config UART_TIMEOUT
+                        int "Uart Canaan Pool timeout"
+                        default 1000
                 endif
 
             config RT_USING_WDT

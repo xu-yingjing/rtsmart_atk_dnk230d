@@ -95,6 +95,15 @@ menu "Components Configuration"
                 help
                     CanMV USB Host Select class net/rtl8152
 
+            if ENABLE_CANMV_USB_HOST
+                config CANMV_USB_PWR_PIN
+                    int "CanMV USB Host Power Control GPIO"
+                    default -1
+                config CANMV_USB_PWR_PIN_VALID_VAL
+                    int "CanMV USB Host Power Vaild PIN Value"
+                    default 1
+            endif
+
             config CANMV_USB_HOST_NET_RTL8152_DEV_NAME
                 string
                 default "u0"

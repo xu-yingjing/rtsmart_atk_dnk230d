@@ -236,7 +236,7 @@ static int uart_fops_poll(struct dfs_fd *fd, struct rt_pollreq *req)
     } else
     if ((kd_rx_fifo->get_index - kd_rx_fifo->put_index) > 0)
     {
-        if (UART_BUFFER_SIZE - (kd_rx_fifo->get_index - kd_rx_fifo->put_index) >= POLLIN_SIZE)
+        if (CANAAN_UART_BUFFER_SIZE - (kd_rx_fifo->get_index - kd_rx_fifo->put_index) >= POLLIN_SIZE)
         {
             kd_uart_device->t_flag = 0;
             return POLLIN;
@@ -353,7 +353,7 @@ static rt_size_t uart_read(rt_device_t dev, rt_off_t pos, void *buffer, rt_size_
         ch = kd_rx_fifo->buffer[kd_rx_fifo->get_index];
         kd_rx_fifo->get_index += 1;
 
-        if (kd_rx_fifo->get_index >= UART_BUFFER_SIZE) kd_rx_fifo->get_index = 0;
+        if (kd_rx_fifo->get_index >= CANAAN_UART_BUFFER_SIZE) kd_rx_fifo->get_index = 0;
 
         if (kd_rx_fifo->is_full == RT_TRUE)
         {
@@ -472,7 +472,7 @@ static void uart_check_buffer_size(void)
     if (already_output == RT_FALSE)
     {
         rt_kprintf("Warning: There is no enough buffer for saving data,"
-              " please increase the UART_BUFFER_SIZE option.\n");
+              " please increase the CANAAN_UART_BUFFER_SIZE option.\n");
         already_output = RT_TRUE;
     }
 }
@@ -484,13 +484,13 @@ static void uart_rx_fifo_get_char(struct rt_serial_rx_fifo *rx_fifo, uint8_t dat
     rx_fifo->buffer[rx_fifo->put_index] = data;
     rx_fifo->put_index += 1;
 
-    if (rx_fifo->put_index >= UART_BUFFER_SIZE) rx_fifo->put_index = 0;
+    if (rx_fifo->put_index >= CANAAN_UART_BUFFER_SIZE) rx_fifo->put_index = 0;
 
     if (rx_fifo->put_index == rx_fifo->get_index)
     {
         rx_fifo->get_index += 1;
         rx_fifo->is_full = RT_TRUE;
-        if (rx_fifo->get_index >= UART_BUFFER_SIZE) rx_fifo->get_index = 0;
+        if (rx_fifo->get_index >= CANAAN_UART_BUFFER_SIZE) rx_fifo->get_index = 0;
 
         uart_check_buffer_size();
     }
@@ -571,9 +571,9 @@ int kd_hw_uart_init(void)
     kd_uart_init(kd_uart_device->base, kd_uart_device->id);
 
     /* create rx_fifo */
-    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + UART_BUFFER_SIZE);
+    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->buffer = (uint8_t*) (kd_uart_device->kd_rx_fifo + 1);
-    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, UART_BUFFER_SIZE);
+    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->put_index = 0;
     kd_uart_device->kd_rx_fifo->get_index = 0;
     kd_uart_device->kd_rx_fifo->is_full = RT_FALSE;
@@ -603,9 +603,9 @@ int kd_hw_uart_init(void)
     kd_uart_init(kd_uart_device->base, kd_uart_device->id);
 
     /* create rx_fifo */
-    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + UART_BUFFER_SIZE);
+    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->buffer = (uint8_t*) (kd_uart_device->kd_rx_fifo + 1);
-    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, UART_BUFFER_SIZE);
+    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->put_index = 0;
     kd_uart_device->kd_rx_fifo->get_index = 0;
     kd_uart_device->kd_rx_fifo->is_full = RT_FALSE;
@@ -635,9 +635,9 @@ int kd_hw_uart_init(void)
     kd_uart_init(kd_uart_device->base, kd_uart_device->id);
 
     /* create rx_fifo */
-    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + UART_BUFFER_SIZE);
+    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->buffer = (uint8_t*) (kd_uart_device->kd_rx_fifo + 1);
-    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, UART_BUFFER_SIZE);
+    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->put_index = 0;
     kd_uart_device->kd_rx_fifo->get_index = 0;
     kd_uart_device->kd_rx_fifo->is_full = RT_FALSE;
@@ -667,9 +667,9 @@ int kd_hw_uart_init(void)
     kd_uart_init(kd_uart_device->base, kd_uart_device->id);
 
     /* create rx_fifo */
-    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + UART_BUFFER_SIZE);
+    kd_uart_device->kd_rx_fifo = rt_malloc(sizeof(struct rt_serial_rx_fifo) + CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->buffer = (uint8_t*) (kd_uart_device->kd_rx_fifo + 1);
-    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, UART_BUFFER_SIZE);
+    rt_memset(kd_uart_device->kd_rx_fifo->buffer, 0, CANAAN_UART_BUFFER_SIZE);
     kd_uart_device->kd_rx_fifo->put_index = 0;
     kd_uart_device->kd_rx_fifo->get_index = 0;
     kd_uart_device->kd_rx_fifo->is_full = RT_FALSE;
