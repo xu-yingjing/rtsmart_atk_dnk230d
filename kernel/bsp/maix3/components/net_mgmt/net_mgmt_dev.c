@@ -1,3 +1,4 @@
+#include "rtdef.h"
 #include <stdbool.h>
 
 #include <rthw.h>
@@ -455,7 +456,7 @@ static rt_err_t _net_mgmt_dev_cmd_net_ifconfig(void *mgmt_dev, void *args)
 {
     struct ifconfig {
         uint16_t net_if;            /* 0: sta, 1: ap, 2:... */
-        uint16_t set;               /* 0:get, 1:set */
+        uint16_t set;               /* 0: get ip info, 1: disable dhcp, set static ip, 2: enable dhcp */
         ip_addr_t ip;               /* IP address */
         ip_addr_t gw;               /* gateway */
         ip_addr_t netmask;          /* subnet mask */
@@ -505,7 +506,12 @@ static rt_err_t _net_mgmt_dev_cmd_net_ifconfig(void *mgmt_dev, void *args)
         lwp_put_to_user(&out->gw, &netdev->gw, sizeof(ip_addr_t));
         lwp_put_to_user(&out->netmask, &netdev->netmask, sizeof(ip_addr_t));
         lwp_put_to_user(&out->dns, &netdev->dns_servers[0], sizeof(ip_addr_t));
-    } else { /* set */
+    } else if (0x01 == ifconfig.set){ /* set static ip */
+        if(0x00 != netdev_dhcp_enabled(netdev, RT_FALSE)) {
+            LOG_E("Set itf %s disable dhcp failed\n", netdev->name);
+            return -RT_ERROR;
+        }
+
         if(0x00 != netdev_set_ipaddr(netdev, &ifconfig.ip)) {
             LOG_E("Set itf %s ip failed\n", netdev->name);
             return -RT_ERROR;
@@ -520,6 +526,11 @@ static rt_err_t _net_mgmt_dev_cmd_net_ifconfig(void *mgmt_dev, void *args)
         }
         if(0x00 != netdev_set_dns_server(netdev, 1, &ifconfig.dns)) {
             LOG_E("Set itf %s dns failed\n", netdev->name);
+            return -RT_ERROR;
+        }
+    } else if(0x02 == ifconfig.set) {
+        if(0x00 != netdev_dhcp_enabled(netdev, RT_TRUE)) {
+            LOG_E("Set itf %s enable dhcp failed\n", netdev->name);
             return -RT_ERROR;
         }
     }

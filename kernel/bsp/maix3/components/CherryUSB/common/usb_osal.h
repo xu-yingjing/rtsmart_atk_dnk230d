@@ -55,5 +55,6 @@ size_t usb_osal_enter_critical_section(void);
 void usb_osal_leave_critical_section(size_t flag);
 
 void usb_osal_msleep(uint32_t delay);
+uint32_t usb_osal_timestamp(void);
 
 #endif /* USB_OSAL_H */

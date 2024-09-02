@@ -171,3 +171,10 @@ void usb_osal_msleep(uint32_t delay)
 {
     rt_thread_mdelay(delay);
 }
+
+uint32_t usb_osal_timestamp(void)
+{
+    extern rt_tick_t rt_tick_get_millisecond(void);
+    
+    return rt_tick_get_millisecond();
+}

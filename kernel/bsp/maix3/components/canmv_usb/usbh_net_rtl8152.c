@@ -4,6 +4,8 @@
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
 #include "lwip/tcpip.h"
+#include "rtdef.h"
+
 #if LWIP_DHCP
 #include "lwip/dhcp.h"
 #include "lwip/prot/dhcp.h"
@@ -74,7 +76,7 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
     rtl8152_dev.parent.user_data = rtl8152_class;
 
     eth_device_init(&rtl8152_dev, CANMV_USB_HOST_NET_RTL8152_DEV_NAME);
-    eth_device_linkchange(&rtl8152_dev, RT_TRUE);
+    // eth_device_linkchange(&rtl8152_dev, RT_TRUE);
 
     usb_osal_thread_create("usbh_rtl8152_rx", 4096, 15, usbh_rtl8152_rx_thread, rtl8152_dev.netif);
 }
@@ -82,4 +84,13 @@ void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
 void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
 {
     eth_device_deinit(&rtl8152_dev);
+}
+
+void usbh_rtl8152_link_changed(struct usbh_rtl8152 *rtl8152_class, int state)
+{
+    if(0x00 == state) {
+        eth_device_linkchange(&rtl8152_dev, RT_FALSE);
+    } else {
+        eth_device_linkchange(&rtl8152_dev, RT_TRUE);
+    }
 }

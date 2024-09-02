@@ -60,6 +60,7 @@ int usbh_rtl8152_get_connect_status(struct usbh_rtl8152 *rtl8152_class);
 
 void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class);
 void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class);
+void usbh_rtl8152_link_changed(struct usbh_rtl8152 *rtl8152_class, int state);
 
 void usbh_rtl8152_rx_thread(void *argument);
 err_t usbh_rtl8152_linkoutput(struct netif *netif, struct pbuf *p);

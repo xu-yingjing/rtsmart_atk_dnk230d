@@ -2137,6 +2137,7 @@ void usbh_rtl8152_rx_thread(void *argument)
     uint16_t data_offset;
     struct pbuf *p;
     struct netif *netif = (struct netif *)argument;
+    // uint32_t curr_time_stamp, last_check_link_state_time_stamp;
 
     USB_LOG_INFO("Create rtl8152 rx thread\r\n");
     // clang-format off
@@ -2155,6 +2156,7 @@ find_class:
         }
         usb_osal_msleep(128);
     }
+    usbh_rtl8152_link_changed(&g_rtl8152_class, 1);
 
     if (g_rtl8152_class.rtl_ops.enable) {
         g_rtl8152_class.rtl_ops.enable(&g_rtl8152_class);
@@ -2206,6 +2208,20 @@ find_class:
                 }
             }
         } else {
+            // curr_time_stamp = usb_osal_timestamp();
+
+            // if((curr_time_stamp - last_check_link_state_time_stamp) > 1000) {
+            //     ret = usbh_rtl8152_get_connect_status(&g_rtl8152_class);
+            //     if (ret < 0) {
+            //         usb_osal_msleep(100);
+            //         goto find_class;
+            //     }
+
+            //     if(false == g_rtl8152_class.connect_status) {
+            //         usbh_rtl8152_link_changed(&g_rtl8152_class, 0);
+            //         goto find_class;
+            //     }
+            // }
         }
     }
     // clang-format off
@@ -2252,6 +2268,10 @@ __WEAK void usbh_rtl8152_run(struct usbh_rtl8152 *rtl8152_class)
 }
 
 __WEAK void usbh_rtl8152_stop(struct usbh_rtl8152 *rtl8152_class)
+{
+}
+
+__WEAK void usbh_rtl8152_link_changed(struct usbh_rtl8152 *rtl8152_class, int state)
 {
 }
 
