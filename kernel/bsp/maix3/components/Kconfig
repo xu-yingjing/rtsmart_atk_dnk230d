@@ -117,13 +117,13 @@ menu "Components Configuration"
         bool "Enable CPU usage"
         def_bool y
 
-    config ENABLE_NETWORK_MGMT_DEV
+    config ENABLE_CANMV_NETWORK_MGMT_DEV
         bool "Enable NetWork Mgmt for CanMV"
         default n
 
-    config ENABLE_MEM_INFO_DEV
-        bool "Enable meminfo Device for CanMV"
-        default n
+    config ENABLE_CANMV_MISC_DEV
+        bool "Enable misc Device for CanMV"
+        default y
 
     source "components/netutils/Kconfig"
 

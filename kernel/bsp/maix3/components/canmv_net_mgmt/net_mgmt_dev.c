@@ -763,7 +763,7 @@ static int net_mgmt_dev_init(void)
 
         // rt_mutex_init(&net_mgmt_device.lock, "wlan_mgmt_dev", RT_IPC_FLAG_FIFO);
 
-        if(RT_EOK != (err = rt_device_register(&net_mgmt_device.device, "net_mgmt", RT_DEVICE_FLAG_RDWR))) {
+        if(RT_EOK != (err = rt_device_register(&net_mgmt_device.device, "canmv_net_mgmt", RT_DEVICE_FLAG_RDWR))) {
             LOG_E("net_mgmt_device register failed, %d\n", errno);
         }
     }
