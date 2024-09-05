@@ -17,6 +17,15 @@
 #include "usage.h"
 #endif
 
+#ifdef PKG_NETUTILS_NTP
+  #include "ntp.h"
+#endif
+
+struct misc_dev_handle {
+  int cmd;
+  int (*func)(void *args);
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -107,9 +116,12 @@ static int misc_open(struct dfs_fd *file) { return 0; }
 
 static int misc_close(struct dfs_fd *file) { return 0; }
 
-#define MISC_DEV_CMD_READ_HEAP (0x1024 + 0)
-#define MISC_DEV_CMD_READ_PAGE (0x1024 + 1)
-#define MISC_DEV_CMD_CPU_USAGE (0x1024 + 2)
+#define MISC_DEV_CMD_READ_HEAP          (0x1024 + 0)
+#define MISC_DEV_CMD_READ_PAGE          (0x1024 + 1)
+#define MISC_DEV_CMD_CPU_USAGE          (0x1024 + 2)
+#define MISC_DEV_CMD_NTP_SYNC           (0x1024 + 3)
+#define MISC_DEV_CMD_GET_TIME_T         (0x1024 + 4)
+#define MISC_DEV_CMD_GET_CPU_TICK       (0x1024 + 5)
 
 struct meminfo_t {
   size_t total_size;
@@ -220,25 +232,96 @@ static int misc_get_cpu_usage(void *args) {
   return 0;
 }
 
-static int misc_ioctl(struct dfs_fd *file, int cmd, void *args) {
+static int misc_ntp_sync(void *args) {
   int result = 0;
 
-  switch (cmd) {
-  case MISC_DEV_CMD_READ_HEAP: {
-    result = misc_get_heap_info(args);
-  } break;
-  case MISC_DEV_CMD_READ_PAGE: {
-    result = misc_get_page_info(args);
-  } break;
-  case MISC_DEV_CMD_CPU_USAGE: {
-    result = misc_get_cpu_usage(args);
-  } break;
-  default:
-    rt_kprintf("unknown cmd 0x%x\n", cmd);
+#ifdef PKG_NETUTILS_NTP
+  if(0x00 < ntp_sync_to_rtc(RT_NULL)) {
+    result = 1;
+  }
+#endif
+
+  if (sizeof(int) != lwp_put_to_user(args, &result, sizeof(int))) {
+    rt_kprintf("%s put_to_user failed\n", __func__);
     return -1;
   }
 
   return 0;
+}
+
+static int misc_get_time_t(void *args) {
+  time_t t;
+
+  time(&t);
+
+  if (sizeof(time_t) != lwp_put_to_user(args, &t, sizeof(time_t))) {
+    rt_kprintf("%s put_to_user failed\n", __func__);
+    return -1;
+  }
+
+  return 0;
+}
+
+static volatile uint64_t time_elapsed = 0;
+
+static inline __attribute__((always_inline)) uint64_t get_ticks()
+{
+    __asm__ __volatile__(
+        "rdtime %0"
+        : "=r"(time_elapsed));
+    return time_elapsed;
+}
+
+static int misc_get_cpu_tick(void *args) {
+  uint64_t tick = get_ticks();
+
+  if (sizeof(uint64_t) != lwp_put_to_user(args, &tick, sizeof(uint64_t))) {
+    rt_kprintf("%s put_to_user failed\n", __func__);
+    return -1;
+  }
+
+  return 0;
+}
+
+static const struct misc_dev_handle misc_handles[] = {
+  {
+    .cmd = MISC_DEV_CMD_READ_HEAP,
+    .func = misc_get_heap_info,
+  },
+  {
+    .cmd = MISC_DEV_CMD_READ_PAGE,
+    .func = misc_get_page_info,
+  },
+  {
+    .cmd = MISC_DEV_CMD_CPU_USAGE,
+    .func = misc_get_cpu_usage,
+  },
+  {
+    .cmd = MISC_DEV_CMD_NTP_SYNC,
+    .func = misc_ntp_sync,
+  },
+  {
+    .cmd = MISC_DEV_CMD_GET_TIME_T,
+    .func = misc_get_time_t,
+  },
+  {
+    .cmd = MISC_DEV_CMD_GET_CPU_TICK,
+    .func = misc_get_cpu_tick,
+  },
+};
+
+static int misc_ioctl(struct dfs_fd *file, int cmd, void *args) {
+  int result = 0;
+
+  for(size_t i = 0; i < sizeof(misc_handles) / sizeof(misc_handles[0]); i++) {
+    if((cmd == misc_handles[i].cmd) && (misc_handles[i].func)) {
+      return misc_handles[i].func(args);
+    }
+  }
+
+  rt_kprintf("%s unknown cmd 0x%x\n", __func__, cmd);
+
+  return -1;
 }
 
 static const struct dfs_file_ops meminfo_fops = {
