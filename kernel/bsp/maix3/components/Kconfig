@@ -125,4 +125,6 @@ menu "Components Configuration"
         bool "Enable meminfo Device for CanMV"
         default n
 
+    source "components/netutils/Kconfig"
+
 endmenu
