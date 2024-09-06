@@ -139,7 +139,7 @@
 #define CONFIG_USBHOST_PSC_STACKSIZE 4096
 #endif
 
-//#define CONFIG_USBHOST_GET_STRING_DESC
+// #define CONFIG_USBHOST_GET_STRING_DESC
 
 // #define CONFIG_USBHOST_MSOS_ENABLE
 #define CONFIG_USBHOST_MSOS_VENDOR_CODE 0x00
@@ -168,13 +168,13 @@
 /* ================ USB Device Port Configuration ================*/
 
 #ifndef CONFIG_USBDEV_EP_NUM
-#define CONFIG_USBDEV_EP_NUM 6
+#define CONFIG_USBDEV_EP_NUM 7
 #endif
 
 /* ================ USB Host Port Configuration ==================*/
 
 #define CONFIG_USBHOST_MAX_BUS 1
-#define CONFIG_USBHOST_PIPE_NUM 6
+#define CONFIG_USBHOST_PIPE_NUM 14
 
 /* ================ EHCI Configuration ================ */
 
