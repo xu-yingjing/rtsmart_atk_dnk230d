@@ -35,8 +35,6 @@
 #include "sysctl_rst.h"
 #include "sysctl_clk.h"
 
-static csi_spidev_t spi_stand;
-
 #define SPI_SUPPORT_CHK( x ) if( ( x ) == 0 ) {             \
     return (-1);  			            \
 }
@@ -69,36 +67,9 @@ static int kd_spi_set_tmode(csi_spidev_t *spidev, int mode)
 
     kd_spi_reg_t *addr = (kd_spi_reg_t *)(spidev->spi_.base_);
 
-    /* It is impossible to write to this register when the SSI is enabled.*/
-    /* we can set the TMOD to config transfer mode as below:
-     *     TMOD_BIT11  TMOD_BIT10    transfer mode
-     *         0          0         transmit & receive
-     *         0          1           transmit only
-     *         1          0           receive only
-     *         1          1           eeprom read
-     */
-    switch (mode) {
-        case RT_SPI_MODE_0:
-            addr->ctrlr0 &= (~DW_SPI_TMOD_BIT10);
-            addr->ctrlr0 &= (~DW_SPI_TMOD_BIT11);
-            break;
+    addr->ctrlr0 &= ~(0x3UL << 8);
+    addr->ctrlr0 |= mode;
 
-        case RT_SPI_MODE_1:
-            addr->ctrlr0 |= DW_SPI_TMOD_BIT10;
-            addr->ctrlr0 &= (~DW_SPI_TMOD_BIT11);
-            break;
-
-        case RT_SPI_MODE_2:
-            addr->ctrlr0 &= (~DW_SPI_TMOD_BIT10);
-            addr->ctrlr0 |= DW_SPI_TMOD_BIT11;
-            break;
-
-        default:
-            addr->ctrlr0 |= DW_SPI_TMOD_BIT10;
-            addr->ctrlr0 |= DW_SPI_TMOD_BIT11;
-            break;
-    }
-    // addr->ctrlr0 |= BIT13;
     return 0;
 }
 
@@ -439,18 +410,44 @@ const static struct rt_spi_ops kd_spi_ops =
 int rt_hw_spi_bus_init(void)
 {
     rt_err_t ret;
+#ifdef RT_USING_SPI0
+    static csi_spidev_t spi_dev0;
+    static struct rt_spi_bus spi_bus0;
+    spi_dev0.spi_.base_ = rt_ioremap((void *)SPI_OPI_BASE_ADDR, SPI_OPI_IO_SIZE);
+    spi_dev0.spi_.idx_ = 0;
+    spi_dev0.baud_rate_ = 40;
+    spi_dev0.rx_delay_ = 2;
+
+    kd_spi_initialize(&spi_dev0, 0, SPI_FORMAT_CPOL0_CPHA0, SPI_FF_STANDARD, 0xf, 8);
+
+    spi_bus0.parent.user_data = (void *)&spi_dev0;
+    ret = rt_spi_bus_register(&spi_bus0, "spi0", &kd_spi_ops);
+#endif
+#ifdef RT_USING_SPI1
+    static csi_spidev_t spi_dev1;
     static struct rt_spi_bus spi_bus1;
-    spi_stand.spi_.base_ = rt_ioremap((void *)SPI_QOPI_BASE_ADDR, SPI_QOPI_IO_SIZE);
-    spi_stand.spi_.idx_ = 1;
-    spi_stand.baud_rate_ = 40;
-    spi_stand.rx_delay_ = 2;
+    spi_dev1.spi_.base_ = rt_ioremap((void *)SPI_QOPI_BASE_ADDR, SPI_OPI_IO_SIZE);
+    spi_dev1.spi_.idx_ = 1;
+    spi_dev1.baud_rate_ = 40;
+    spi_dev1.rx_delay_ = 2;
 
-    kd_spi_initialize(&spi_stand, 1, SPI_FORMAT_CPOL0_CPHA0, SPI_FF_STANDARD, 0xf, 8);
+    kd_spi_initialize(&spi_dev1, 1, SPI_FORMAT_CPOL0_CPHA0, SPI_FF_STANDARD, 0xf, 8);
 
-    spi_bus1.parent.user_data = (void *)&spi_stand;
+    spi_bus1.parent.user_data = (void *)&spi_dev1;
     ret = rt_spi_bus_register(&spi_bus1, "spi1", &kd_spi_ops);
-#ifndef RT_FASTBOOT
-    rt_kprintf("register spi[1] bus OK.\n");
+#endif
+#ifdef RT_USING_SPI2
+    static csi_spidev_t spi_dev2;
+    static struct rt_spi_bus spi_bus2;
+    spi_dev2.spi_.base_ = rt_ioremap((void *)SPI_QOPI_BASE_ADDR + SPI_OPI_IO_SIZE, SPI_OPI_IO_SIZE);
+    spi_dev2.spi_.idx_ = 2;
+    spi_dev2.baud_rate_ = 40;
+    spi_dev2.rx_delay_ = 2;
+
+    kd_spi_initialize(&spi_dev2, 2, SPI_FORMAT_CPOL0_CPHA0, SPI_FF_STANDARD, 0xf, 8);
+
+    spi_bus2.parent.user_data = (void *)&spi_dev2;
+    ret = rt_spi_bus_register(&spi_bus2, "spi2", &kd_spi_ops);
 #endif
     return ret;
 }

@@ -9,13 +9,11 @@
 
 #include <rtthread.h>
 #include <drivers/spi.h>
+#include "drv_spi.h"
 
-#define RT_SPI_DEV_CTRL_CONFIG       (RT_DEVICE_CTRL_BASE(SPIBUS) + 0x01)
-#define RT_SPI_DEV_CTRL_RW           (RT_DEVICE_CTRL_BASE(SPIBUS) + 0x02)
-#define RT_SPI_DEV_CTRL_CLK          (RT_DEVICE_CTRL_BASE(SPIBUS) + 0x03)
-#define SPI_BUS_NAME                "spi1"
-#define SPI1_DEVICE                  "spi_dev"
-struct rt_spi_device *spi_device;
+#define RT_SPI_DEV_CTRL_CONFIG  (RT_DEVICE_CTRL_BASE(SPIBUS) + 0x01)
+#define RT_SPI_DEV_CTRL_RW      (RT_DEVICE_CTRL_BASE(SPIBUS) + 0x02)
+#define RT_SPI_DEV_CTRL_CLK     (RT_DEVICE_CTRL_BASE(SPIBUS) + 0x03)
 
 struct rt_spi_priv_data {
     const void           *send_buf;
@@ -74,7 +72,7 @@ static rt_err_t _spi_bus_device_control(rt_device_t dev,
         case RT_SPI_DEV_CTRL_RW: /* set device */
             priv_data = (struct rt_spi_priv_data *)args;
             rt_spi_send_then_recv(bus->owner, priv_data->send_buf, priv_data->send_length,
-                                priv_data->recv_buf, priv_data->recv_length); 
+                                priv_data->recv_buf, priv_data->recv_length);
             break;
         default:
             break;
@@ -85,25 +83,37 @@ static rt_err_t _spi_bus_device_control(rt_device_t dev,
 
 rt_err_t  _spi_bus_device_open(rt_device_t dev, rt_uint16_t oflag)
 {
-
-    struct rt_spi_bus *bus;
     rt_err_t res;
+    struct rt_spi_bus *bus;
     struct rt_spi_configuration cfg = {
-        .mode = 1,
+        .mode = 0,
         .data_width = 8,
-        .max_hz = 20,
+        .max_hz = 1000000,
     };
 
-    spi_device = rt_malloc(sizeof(struct rt_spi_device ));
+    bus = (struct rt_spi_bus *)dev;
+    if (bus->owner != NULL)
+    {
+        rt_kprintf("%s is already open!\n");
+        return -1;
+    }
+    csi_spidev_t *spi_hc = (csi_spidev_t *)dev->user_data;
+    int id = spi_hc->spi_.idx_;
 
-    res = rt_spi_bus_attach_device(spi_device, SPI1_DEVICE, SPI_BUS_NAME, spi_device);
+    char bus_name[32];
+    char dev_name[32];
+    struct rt_spi_device *spi_device = rt_malloc(sizeof(struct rt_spi_device ));
+    rt_snprintf(bus_name, sizeof(bus_name), "spi%d", id);
+    rt_snprintf(dev_name, sizeof(dev_name), "spi%d_dev", id);
+    res = rt_spi_bus_attach_device(spi_device, dev_name, bus_name, spi_device);
     if (res != RT_EOK)
     {
+        rt_free(spi_device);
         rt_kprintf("rt_spi_bus_attach_device() failed!\n");
         return res;
     }
 
-    spi_device->bus->owner = spi_device;
+    bus->owner = spi_device;
 
     return 0;
 }
@@ -119,8 +129,8 @@ rt_err_t  _spi_bus_device_close(rt_device_t dev)
         rt_kprintf("device unregister failed!\n");
         return res;
     }
-    spi_device->bus->owner = NULL;
-    rt_free(spi_device);
+    rt_free(bus->owner);
+    bus->owner = NULL;
 
     return 0;
 }
