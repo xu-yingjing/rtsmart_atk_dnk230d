@@ -16,6 +16,7 @@
 
 #include <dfs_fs.h>
 #include <ioremap.h>
+#include "riscv_mmu.h"
 
 #include <msh.h>
 
@@ -92,7 +93,7 @@ static void mnt_mount_table(void)
               if((0x1234 == fd) && (0x00 == mkfs_for_data_partition)) {
                 mkfs_for_data_partition = 1;
 
-                rt_kprintf("\033[31mStart format partition[2] to fat, it will took a long time, DO NOT POWEROFF THE BOARD\033[0m\n");
+                rt_kprintf("\033[31mStart format partition[2] to fat, it will took a long time, DO NOT POWEROFF THE BOARD, PLEASE WAIT IT DONE\033[0m\n");
                 dfs_mkfs("elm", custom_mount_table[index].device_name);
                 rt_kprintf("\n\n\033[32mformat done.\033[0m\n");
 
@@ -115,9 +116,28 @@ static void mnt_mount_table(void)
 }
 #endif // RT_USING_SDIO
 
+static void check_bank_voltage(void)
+{
+#define MAP_SIZE    PAGE_SIZE
+#define MAP_MASK    (MAP_SIZE - 1)
+
+  const rt_ubase_t target = 0x91213418UL;
+  void *map_base = rt_ioremap_nocache((void *)(target & ~MAP_MASK), MAP_SIZE);
+  volatile void *virt_addr = map_base + (target & MAP_MASK);
+  volatile rt_uint32_t read_result = *((rt_uint32_t *) virt_addr);
+
+  if(0x00 == read_result) {
+    rt_kprintf("\n\n\033[31mTHIS BOARD MAYBE NOT CONFIGURE BANK VOLTAGE!!!\n\n\033[0m");
+  }
+
+  rt_iounmap(map_base);
+}
+
 int main(void) {
+  check_bank_voltage();
+
 #ifdef CONFIG_SDK_ENABLE_CANMV
-  printf("CanMV Start\n");
+  rt_kprintf("CanMV Start\n");
 #endif //CONFIG_SDK_ENABLE_CANMV
 
 #ifdef RT_USING_SDIO
