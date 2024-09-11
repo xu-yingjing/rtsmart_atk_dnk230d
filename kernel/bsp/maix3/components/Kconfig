@@ -86,6 +86,14 @@ menu "Components Configuration"
                         bool "Enable net RTL8152"
                         default y
 
+                    config CHERRY_USB_HOST_ENABLE_CLASS_CDC_ACM
+                        bool "Enable cdc ACM"
+                        default n
+
+                    config CHERRY_USB_HOST_ENABLE_CLASS_CDC_ECM
+                        bool "Enable cdc ECM"
+                        default n
+
                 endif
 
             config ENABLE_CANMV_USB_HOST
