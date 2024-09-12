@@ -23,6 +23,10 @@
 #include "./config.h"
 #include "dfs_posix.h"
 
+#ifdef CONFIG_BOARD_K230_CANMV_LCKFB
+#include "drv_gpio.h"
+#endif // CONFIG_BOARD_K230_CANMV_LCKFB
+
 #ifdef ENABLE_CHERRY_USB
 
 #include "canmv_usb.h"
@@ -128,6 +132,10 @@ static void check_bank_voltage(void)
 
   if(0x00 == read_result) {
     rt_kprintf("\n\n\033[31mTHIS BOARD MAYBE NOT CONFIGURE BANK VOLTAGE!!!\n\n\033[0m");
+#ifdef CONFIG_BOARD_K230_CANMV_LCKFB
+    kd_pin_mode(62, GPIO_DM_OUTPUT);
+    kd_pin_write(62, GPIO_PV_LOW);
+#endif
   }
 
   rt_iounmap(map_base);
