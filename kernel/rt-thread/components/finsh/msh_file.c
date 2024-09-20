@@ -374,7 +374,7 @@ int cmd_echo(int argc, char** argv)
     {
         int fd;
 
-        fd = open(argv[2], O_RDWR | O_APPEND | O_CREAT, 0);
+        fd = open(argv[2], O_RDWR | O_APPEND /* | O_CREAT */, 0);
         if (fd >= 0)
         {
             write (fd, argv[1], strlen(argv[1]));
