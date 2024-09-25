@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <rthw.h>
 #include <rtthread.h>
@@ -61,6 +62,10 @@ static const struct dfs_mount_tbl custom_mount_table[] = {
   {SD_DEV_PART("sd", SDCARD_ON_SDIO_DEV, "2"), "/data", "elm", 0, 0},
   {0}
 };
+
+#ifndef CHERRY_USB_DEVICE_ENABLE_CLASS_MTP
+bool g_fs_mount_data_succ = false;
+#endif 
 
 static void mnt_mount_table(void)
 {
