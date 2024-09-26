@@ -29,6 +29,7 @@ static struct dfs_fnode_mgr dfs_fm;
 unsigned char dfs_fs_change;
 
 #if defined (CHERRY_USB_DEVICE_ENABLE_CLASS_MTP)
+#define mtp_ctx void
 #include "inotify.h"
 extern const struct dfs_filesystem_ops dfs_elm;
 #endif
