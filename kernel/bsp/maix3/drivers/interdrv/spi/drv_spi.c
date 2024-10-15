@@ -62,17 +62,6 @@ static int kd_spi_setup_device(csi_spidev_t *spidev)
     return 0;
 }
 
-static int kd_spi_set_tmode(csi_spidev_t *spidev, int mode)
-{
-
-    kd_spi_reg_t *addr = (kd_spi_reg_t *)(spidev->spi_.base_);
-
-    addr->ctrlr0 &= ~(0x3UL << 8);
-    addr->ctrlr0 |= mode;
-
-    return 0;
-}
-
 static uint32_t get_buffer_width(size_t data_bit_length)
 {
     if (data_bit_length <= 8)
@@ -170,13 +159,11 @@ static rt_err_t drv_spi_configure(struct rt_spi_device *device,
         break;
     }
 
+    spi_dev->mode_ = mode;
     spi_dev->data_bit_length_ = width;
     spi_dev->baud_rate_ = div;
 
     kd_spi_setup_device(spi_dev);
-
-    if(mode >= 0)
-        kd_spi_set_tmode(spi_dev, mode);
 
     return ret;
 }
